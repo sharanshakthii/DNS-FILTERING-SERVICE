@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+*.log
+.pytest_cache/
+
+# Stage 3: local database files are runtime artefacts, never committed
+data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

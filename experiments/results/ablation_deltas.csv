@@ -1,0 +1,6 @@
+removed_module,baseline_f1,arm_f1,delta_f1,delta_recall,delta_precision,delta_false_positive_rate
+ti,0.0567,0.6536,0.5969,0.4562,0.0,0.0
+nrd,0.0567,0.4,0.3433,0.2208,0.0,0.0
+typosquat,0.0567,0.4,0.3433,0.2208,0.0,0.0
+dga,0.0567,0.4,0.3433,0.2208,0.0,0.0
+beaconing,0.0567,0.0567,0.0,0.0,0.0,0.0

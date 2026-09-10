@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRJ_112 — DNS filtering console</title>
+<!--
+  Stage 11 — DNS filtering console.
+
+  Plain HTML, CSS and fetch(). No framework, no build step, no dependency, no
+  external asset of any kind. Everything on this page comes from the Stage 10
+  API; there is no sample data in this file, and an empty database renders an
+  empty state rather than invented rows.
+
+  Motion carries information rather than decorating it. The five-stage rail
+  teaches the pipeline once during the intro, then becomes the component that
+  reports pipeline progress for every decision. The weight track draws the
+  weighted mean literally to scale: each module's slot is its weight, each
+  fill is its score, and the filled fraction of the track is the aggregate.
+  Excluded modules take no weight at all, so "not counted" can never be
+  mistaken for "scored zero".
+
+  Only transform and opacity are animated. No layout property is tweened.
+-->
+<style>
+  :root {
+    /* Four surface levels carry depth; shadows are used sparingly. */
+    --ground:   #0b1017;
+    --panel:    #121a24;
+    --raised:   #18222f;
+    --hairline: #223040;
+    --hairline-bright: #31445c;
+
+    --ink:      #e6edf5;
+    --ink-soft: #8b9bb0;
+    --ink-dim:  #5f7085;
+
+    /* Verdict hues encode state. Muted on purpose: no neon. */
+    --allow:   #4fb286;
+    --flag:    #d9a441;
+    --block:   #e0645c;
+    --unknown: #8f83b8;
+
+    --signal:  #4a9fd8;   /* interactive affordances only */
+
+    --r: 4px;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+
+    --t-fast: 120ms;
+    --t-base: 200ms;
+    --t-slow: 450ms;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 70% -10%, #16202c 0%, transparent 60%),
+      var(--ground);
+    color: var(--ink);
+    font: 14px/1.55 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  .mono { font-family: var(--mono); }
+  .soft { color: var(--ink-soft); }
+  .dim  { color: var(--ink-dim); }
+
+  /* ===================================================================
+     Intro — the rail draws itself, then takes its post in the header.
+     =================================================================== */
+
+  #intro {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    background: var(--ground);
+    transition: opacity 400ms var(--ease);
+  }
+  #intro.done { opacity: 0; pointer-events: none; }
+
+  #intro .card { width: min(720px, 92vw); text-align: center; }
+
+  #intro h1 {
+    font-size: clamp(20px, 3vw, 28px);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 0 0 6px;
+    opacity: 0;
+    animation: rise 500ms var(--ease-out) 120ms forwards;
+  }
+  #intro p {
+    margin: 0 0 34px;
+    color: var(--ink-soft);
+    opacity: 0;
+    animation: rise 500ms var(--ease-out) 220ms forwards;
+  }
+  #intro .skip {
+    margin-top: 30px;
+    opacity: 0;
+    animation: rise 400ms var(--ease-out) 900ms forwards;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* ===================================================================
+     The pipeline rail — intro teacher, then permanent status component.
+     =================================================================== */
+
+  .rail { width: 100%; }
+  .rail svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+  .rail .track {
+    stroke: var(--hairline-bright);
+    stroke-width: 1.5;
+    fill: none;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  #intro .rail .track { animation: draw 620ms var(--ease-out) 260ms forwards; }
+  .rail.settled .track { stroke-dashoffset: 0; }
+
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  .rail .node {
+    fill: var(--ground);
+    stroke: var(--hairline-bright);
+    stroke-width: 1.5;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: stroke var(--t-base) var(--ease), fill var(--t-base) var(--ease);
+  }
+  #intro .rail .node { opacity: 0; animation: pop 340ms var(--ease-out) forwards; }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(.82); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .rail .label {
+    fill: var(--ink-dim);
+    font: 500 10px var(--sans);
+    text-anchor: middle;
+    transition: fill var(--t-base) var(--ease);
+  }
+  #intro .rail .label { opacity: 0; animation: rise 360ms var(--ease-out) forwards; }
+
+  /* A stage lights while that part of the pipeline is being worked. */
+  .rail .stage.lit .node {
+    stroke: var(--signal);
+    fill: rgba(74, 159, 216, .22);
+  }
+  .rail .stage.lit .label { fill: var(--ink); }
+
+  /* One token travels the rail during the intro. */
+  #intro .token {
+    fill: var(--signal);
+    opacity: 0;
+    animation: travel 900ms var(--ease) 620ms forwards;
+  }
+  @keyframes travel {
+    0%   { opacity: 0; transform: translateX(0); }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(var(--rail-span, 560px)); }
+  }
+
+  /* Scanning: a highlight sweeps the rail while a request is in flight. */
+  .rail .sweep { opacity: 0; }
+  .rail.scanning .sweep { opacity: 1; animation: sweep 1400ms linear infinite; }
+  @keyframes sweep {
+    from { transform: translateX(-14%); }
+    to   { transform: translateX(114%); }
+  }
+
+  /* ===================================================================
+     Frame
+     =================================================================== */
+
+  #console { opacity: 0; transition: opacity 400ms var(--ease); }
+  #console.ready { opacity: 1; }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: linear-gradient(180deg, #101823 0%, rgba(16,24,35,.92) 100%);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--hairline);
+    padding: 12px 22px 10px;
+    display: grid;
+    grid-template-columns: auto minmax(220px, 460px) auto;
+    align-items: center;
+    gap: 18px;
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  header .sub { font-size: 11.5px; color: var(--ink-dim); }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    padding: 4px 11px;
+    background: var(--panel);
+    transition: color 220ms var(--ease), border-color 220ms var(--ease);
+    white-space: nowrap;
+  }
+  .pill .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ink-dim);
+    transition: background-color 220ms var(--ease);
+  }
+  .pill.ok   { color: var(--allow); border-color: rgba(79,178,134,.4); }
+  .pill.ok .dot   { background: var(--allow); }
+  .pill.warn { color: var(--flag); border-color: rgba(217,164,65,.4); }
+  .pill.warn .dot { background: var(--flag); }
+  .pill.bad  { color: var(--block); border-color: rgba(224,100,92,.45); }
+  .pill.bad .dot  { background: var(--block); }
+
+  .honesty {
+    margin: 0;
+    padding: 7px 22px;
+    font-size: 11.5px;
+    color: #c2a86a;
+    background: linear-gradient(180deg, rgba(217,164,65,.09), rgba(217,164,65,.03));
+    border-bottom: 1px solid rgba(217,164,65,.18);
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(330px, 4fr) minmax(340px, 6fr);
+    gap: 16px;
+    padding: 16px 22px 44px;
+    align-items: start;
+    max-width: 1600px;
+  }
+
+  section {
+    background: linear-gradient(180deg, var(--panel), #10171f);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r);
+    box-shadow: 0 1px 0 rgba(255,255,255,.02) inset;
+  }
+
+  .stack { display: grid; gap: 16px; }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .head h2 { font-size: 13px; font-weight: 600; margin: 0; }
+  .head .meta { font-size: 11.5px; color: var(--ink-dim); }
+
+  .body { padding: 14px; }
+
+  /* Panels stagger in once the console appears. */
+  .enter { opacity: 0; transform: translateY(10px); }
+  #console.ready .enter { animation: rise 420ms var(--ease-out) forwards; }
+  #console.ready .stack .enter:nth-child(1) { animation-delay: 40ms; }
+  #console.ready .stack .enter:nth-child(2) { animation-delay: 100ms; }
+  #console.ready .stack .enter:nth-child(3) { animation-delay: 160ms; }
+
+  /* ===================================================================
+     Controls
+     =================================================================== */
+
+  input, select, button {
+    font: inherit;
+    color: var(--ink);
+    background: #0e161f;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r);
+    padding: 6px 9px;
+    transition: border-color var(--t-fast) var(--ease),
+                background-color var(--t-fast) var(--ease),
+                transform 80ms var(--ease);
+  }
+  input:hover, select:hover, button:hover { border-color: var(--hairline-bright); }
+  input.invalid { border-color: var(--block); }
+
+  button { cursor: pointer; background: #16202c; }
+  button:hover { background: #1c2836; }
+  button:active { transform: scale(.985); }
+  button[disabled] { opacity: .45; cursor: default; transform: none; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 10px 14px; border-bottom: 1px solid var(--hairline);
+  }
+  .controls label { display: inline-flex; align-items: center; gap: 6px;
+                    font-size: 12px; color: var(--ink-soft); }
+
+  /* ===================================================================
+     Activity feed
+     =================================================================== */
+
+  .feed { max-height: 460px; overflow-y: auto; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 3px 42px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px 9px 0;
+    border-bottom: 1px solid rgba(34,48,64,.55);
+    cursor: pointer;
+    transition: background-color var(--t-fast) var(--ease),
+                transform 80ms var(--ease);
+  }
+  .row:hover { background: var(--raised); }
+  .row:active { transform: scale(.997); }
+  .row[aria-selected="true"] {
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--hairline-bright);
+  }
+
+  .row .edge { align-self: stretch; border-radius: 0 2px 2px 0; opacity: .55; }
+  .row.fresh { animation: arrive 320ms var(--ease) both; }
+  .row.fresh .edge { animation: flare 1200ms var(--ease) forwards; }
+
+  @keyframes arrive {
+    from { opacity: 0; transform: translateY(-6px) scaleY(.98); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes flare {
+    0%, 35% { opacity: 1; }
+    100%    { opacity: .55; }
+  }
+
+  .row .id { font: 11.5px var(--mono); color: var(--ink-dim); text-align: right; }
+  .row .name { font: 13px var(--mono); word-break: break-all; }
+  .row .sc { font: 12px var(--mono); color: var(--ink-soft); }
+
+  .badge {
+    font-size: 11px; font-weight: 600;
+    padding: 2px 7px; border-radius: 3px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+    transition: box-shadow 250ms var(--ease);
+  }
+  .badge.ALLOW { color: var(--allow); }
+  .badge.FLAG  { color: var(--flag); }
+  .badge.BLOCK { color: var(--block); }
+  .badge.UNKNOWN, .badge.SERVFAIL, .badge.FORMERR { color: var(--unknown); }
+  .badge.bloom { box-shadow: 0 0 0 3px rgba(224,100,92,.16); }
+  /* A decision recorded as BLOCK but never acted on must read differently. */
+  .badge.observed { border-style: dashed; }
+
+  /* ===================================================================
+     Weight track — the weighted mean, drawn to scale.
+     =================================================================== */
+
+  .track-wrap { margin: 4px 0 28px; position: relative; }
+
+  .track {
+    display: flex;
+    height: 34px;
+    border: 1px solid var(--hairline-bright);
+    border-radius: var(--r);
+    overflow: hidden;
+    background: #0c141d;
+  }
+
+  .slot {
+    position: relative;
+    border-right: 1px solid var(--hairline);
+    overflow: hidden;
+    min-width: 0;
+  }
+  .slot:last-child { border-right: 0; }
+
+  .slot .fill {
+    position: absolute; inset: 0;
+    transform-origin: left center;
+    transform: scaleX(0);
+    transition: transform var(--t-slow) var(--ease-out);
+    opacity: .82;
+  }
+  .slot .tag {
+    position: absolute; left: 7px; top: 50%;
+    transform: translateY(-50%);
+    font: 11px var(--mono);
+    color: var(--ink);
+    text-shadow: 0 1px 2px rgba(0,0,0,.65);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .slot.excluded {
+    background-image: repeating-linear-gradient(
+      45deg, rgba(95,112,133,.22) 0 5px, transparent 5px 10px);
+  }
+  .slot.excluded .tag { color: var(--ink-dim); }
+
+  .gate {
+    position: absolute; top: -3px; height: 40px; width: 1px;
+    background: var(--ink-dim);
+  }
+  .gate b {
+    position: absolute; top: 100%; left: 0;
+    transform: translateX(-50%);
+    font: 400 10px var(--sans);
+    color: var(--ink-dim);
+    white-space: nowrap;
+    padding-top: 3px;
+  }
+  .gate.hit, .gate.hit b { color: var(--ink-soft); }
+  .gate.hit { background: var(--ink-soft); }
+  .gate.pulse { animation: gatepulse 200ms var(--ease) 2; }
+  @keyframes gatepulse { 50% { box-shadow: 0 0 0 2px rgba(255,255,255,.16); } }
+
+  .score-line {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .score-line .value { font: 600 26px/1 var(--mono); letter-spacing: -0.02em; }
+  .score-line .of { font-size: 12px; color: var(--ink-dim); }
+
+  /* Modules not implemented yet: no slot, no score, no fill. */
+  .roadmap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .roadmap span {
+    font: 11px var(--mono);
+    color: var(--ink-dim);
+    border: 1px dashed var(--hairline);
+    border-radius: 3px;
+    padding: 1px 7px;
+  }
+
+  /* ===================================================================
+     Investigation
+     =================================================================== */
+
+  .swap.leaving > * {
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: opacity 160ms var(--ease), transform 160ms var(--ease);
+  }
+
+  .reveal { opacity: 0; transform: translateY(6px); }
+  .reveal.in { animation: rise 280ms var(--ease-out) forwards; }
+
+  .module { padding: 10px 0; border-bottom: 1px solid rgba(34,48,64,.5); }
+  .module:last-child { border-bottom: 0; }
+
+  .module-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .module-name { font: 13px var(--mono); }
+  .math { font: 11.5px var(--mono); color: var(--ink-soft); }
+
+  .contrib {
+    height: 6px; background: #0c141d; border-radius: 3px;
+    overflow: hidden; margin-top: 7px;
+  }
+  .contrib > i {
+    display: block; height: 100%;
+    background: var(--signal);
+    transform-origin: left center;
+    transform: scaleX(0);
+    transition: transform 280ms var(--ease-out);
+  }
+  .badge.unavailable { color: var(--ink-dim); border-style: dotted; }
+
+  .contrib > i.excluded {
+    background: repeating-linear-gradient(45deg,
+      var(--hairline-bright) 0 4px, transparent 4px 8px);
+  }
+
+  .features {
+    display: grid; grid-template-columns: max-content 1fr;
+    gap: 2px 14px; font-size: 11.5px; margin: 8px 0 0;
+  }
+  .features dt { color: var(--ink-dim); }
+  .features dd { margin: 0; font-family: var(--mono); color: var(--ink-soft);
+                 word-break: break-all; }
+
+  fieldset {
+    border: 1px solid var(--hairline);
+    border-radius: var(--r);
+    padding: 10px 12px 12px;
+    margin: 0 0 12px;
+    background: rgba(255,255,255,.012);
+  }
+  legend { font-size: 11.5px; color: var(--ink-dim); padding: 0 5px; }
+
+  .kv { display: grid; grid-template-columns: max-content 1fr;
+        gap: 4px 14px; font-size: 13px; margin: 0; }
+  .kv dt { color: var(--ink-dim); }
+  .kv dd { margin: 0; }
+
+  .summary {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: rgba(74, 159, 216, .07);
+    border-left: 2px solid var(--signal);
+    border-radius: 0 var(--r) var(--r) 0;
+    padding: 9px 12px;
+    margin: 0 0 14px;
+  }
+
+  .note {
+    font-size: 11.5px; color: var(--ink-dim);
+    border-left: 2px solid var(--hairline);
+    padding-left: 10px; margin: 10px 0 0;
+  }
+
+  /* Last known data stays and dims rather than vanishing. */
+  .stale { opacity: .6; transition: opacity var(--t-base) var(--ease); }
+
+  .alert {
+    margin: 0; padding: 10px 14px;
+    background: rgba(224,100,92,.09);
+    border-bottom: 1px solid rgba(224,100,92,.25);
+    color: #efa39d; font-size: 12.5px;
+  }
+
+  .empty { padding: 40px 18px; text-align: center; color: var(--ink-soft); }
+  .empty strong { display: block; color: var(--ink); font-size: 14px;
+                  margin-bottom: 8px; }
+  .empty code {
+    display: inline-block; margin-top: 10px;
+    font: 12px var(--mono); color: var(--ink);
+    background: #0c141d; border: 1px solid var(--hairline);
+    border-radius: 3px; padding: 4px 9px;
+  }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 20px 26px; padding: 12px 14px; }
+  .stat .n { font: 600 19px/1.15 var(--mono); letter-spacing: -0.02em; }
+  .stat .k { font-size: 11px; color: var(--ink-dim); }
+  .stat .n.allow   { color: var(--allow); }
+  .stat .n.flag    { color: var(--flag); }
+  .stat .n.block   { color: var(--block); }
+  .stat .n.unknown { color: var(--unknown); }
+
+  /* ===================================================================
+     Responsive
+     =================================================================== */
+
+  @media (max-width: 1100px) {
+    main { grid-template-columns: minmax(300px, 5fr) minmax(300px, 6fr); }
+  }
+
+  #back { display: none; }
+
+  @media (max-width: 900px) {
+    header { grid-template-columns: 1fr auto; }
+    header .rail { grid-column: 1 / -1; }
+    main { grid-template-columns: 1fr; }
+
+    /* Investigation becomes a sheet entering from the right. */
+    #investigation {
+      position: fixed; inset: 0; z-index: 40;
+      margin: 0; border-radius: 0; overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 240ms var(--ease);
+    }
+    #investigation.open { transform: none; }
+    #back { display: inline-flex; }
+  }
+
+  @media (max-width: 560px) {
+    header, .honesty, main { padding-left: 14px; padding-right: 14px; }
+    .slot .tag { display: none; }
+    .features { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 3px 1fr auto; min-height: 44px; }
+    .row .id, .row .sc { display: none; }
+    button { min-height: 44px; }
+  }
+
+  @media (pointer: coarse) {
+    .row:hover { background: none; }
+  }
+
+  /* ===================================================================
+     Reduced motion — the information stays, the movement goes.
+     =================================================================== */
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 1ms !important;
+      animation-delay: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+    }
+    .enter, .reveal, #intro h1, #intro p, #intro .skip { opacity: 1; transform: none; }
+    .rail .track { stroke-dashoffset: 0; }
+    /* A new row holds its colour instead of sliding in. */
+    .row.fresh { animation: none; }
+    .row.fresh .edge { animation: none; opacity: 1; }
+    .rail.scanning .sweep { animation: none; opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Intro: the rail draws itself, then takes its post ============ -->
+<div id="intro" role="dialog" aria-label="Introduction">
+  <div class="card">
+    <h1>DNS filtering console</h1>
+    <p class="soft">Every query is scored by independent signals, combined into
+       one risk decision, and recorded with the reasoning behind it.</p>
+    <div class="rail" id="intro-rail"></div>
+    <div class="skip"><button id="skip">Enter the console</button></div>
+  </div>
+</div>
+
+<!-- ===== Console ===================================================== -->
+<div id="console">
+
+  <header>
+    <div>
+      <h1>DNS filtering console</h1>
+      <div class="sub">PRJ_112 &middot; reading decisions this resolver has already made</div>
+    </div>
+    <div class="rail" id="head-rail"></div>
+    <div style="justify-self:end; display:flex; gap:8px; align-items:center">
+      <button id="back">Back</button>
+      <span class="pill" id="conn"><span class="dot"></span><span id="conn-text">Connecting</span></span>
+      <button id="signout" style="display:none">Sign out</button>
+    </div>
+  </header>
+
+  <p class="honesty">
+    Local development only &mdash; this page has no authentication and is not
+    production-ready. The counts below describe traffic this resolver happened
+    to see; they are not evaluation metrics, and detection
+    accuracy has not yet been measured.
+  </p>
+
+  <main>
+    <div class="stack">
+
+      <section class="enter" aria-label="Summary">
+        <div class="stats" id="stats"><span class="dim">Loading&hellip;</span></div>
+      </section>
+
+      <section class="enter" aria-label="Activity">
+        <div class="head">
+          <h2>Activity</h2>
+          <span class="meta" id="feed-count"></span>
+        </div>
+        <div class="controls">
+          <label>Verdict
+            <select id="filter-verdict">
+              <option value="">all</option>
+              <option>ALLOW</option><option>FLAG</option><option>BLOCK</option>
+              <option>UNKNOWN</option><option>SERVFAIL</option><option>FORMERR</option>
+            </select>
+          </label>
+          <input type="text" id="filter-qname" placeholder="name starts with…"
+                 size="14" aria-label="Filter by domain name prefix">
+          <button id="refresh">Refresh</button>
+          <label><input type="checkbox" id="auto" checked> live</label>
+        </div>
+        <div id="feed-error"></div>
+        <div class="feed" id="feed"></div>
+      </section>
+
+      <section class="enter" aria-label="Check a domain">
+        <div class="head"><h2>Check a domain</h2></div>
+        <div class="body">
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <input type="text" id="lookup-domain" placeholder="example.com"
+                   size="20" aria-label="Domain to check">
+            <button id="lookup-go">Score it</button>
+          </div>
+          <p class="note">Scores the name now using this API process&rsquo;s own
+             engine. Nothing is enforced and no DNS response is sent, so this
+             cannot block anything.</p>
+          <div id="lookup-out" class="swap"></div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="stack">
+
+      <section id="investigation" aria-label="Investigation">
+        <div class="head">
+          <h2>Investigation</h2>
+          <span class="meta" id="trace-id"></span>
+        </div>
+        <div class="body swap" id="trace">
+          <p class="dim">Select a decision to see which signals produced it.</p>
+        </div>
+      </section>
+
+      <section class="enter" aria-label="Configuration">
+        <div class="head"><h2>Configuration</h2></div>
+        <div class="body" id="mode"><p class="dim">Loading&hellip;</p></div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+
+/* Served from the API's own origin, so no host is configured anywhere. */
+const API = "";
+
+const $ = (id) => document.getElementById(id);
+const VERDICTS = ["ALLOW", "FLAG", "BLOCK", "UNKNOWN", "SERVFAIL", "FORMERR"];
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* The pipeline the rail depicts, and the order stages light in. */
+const STAGES = ["Query", "Signals", "Aggregation", "Verdict", "Enforcement"];
+
+/* Detection roadmap. What actually exists is decided by the live /mode
+   response: `available_modules` lists what this build can construct, and
+   `modules` lists what this engine is running. A module that exists but is
+   switched off must not be labelled "not implemented", and neither is ever
+   given a score or a slot on the weight track. */
+const ROADMAP = ["ti", "nrd", "typosquat", "dga", "beaconing"];
+let availableModules = [];
+
+let seenIds = new Set();
+let selectedId = null;
+let lastScore = 0;
+let timer = null;
+let connState = null;
+
+/* -- helpers ------------------------------------------------------------ */
+
+function esc(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function num(value, places = 3) {
+  return (value === null || value === undefined)
+    ? "—" : Number(value).toFixed(places);
+}
+
+function verdictClass(verdict) {
+  return VERDICTS.includes(verdict) ? verdict : "UNKNOWN";
+}
+
+function badge(verdict, extra) {
+  return `<span class="badge ${verdictClass(verdict)} ${extra || ""}">${esc(verdict)}</span>`;
+}
+
+/* A 401 anywhere means the session has ended — expired, or signed out in
+   another tab. Sending the browser back to the login page is the honest
+   response; continuing to poll would just produce errors. */
+function handleUnauthorised(response) {
+  if (response.status === 401) {
+    window.location.replace("/login");
+    return true;
+  }
+  return false;
+}
+
+async function get(path) {
+  const response = await fetch(API + path, {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin"
+  });
+  if (handleUnauthorised(response)) throw new Error("session ended");
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.detail || `${response.status} ${response.statusText}`);
+  return body;
+}
+
+async function send(path, method, payload) {
+  const response = await fetch(API + path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(payload)
+  });
+  if (handleUnauthorised(response)) throw new Error("session ended");
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.detail || `${response.status} ${response.statusText}`);
+  return body;
+}
+
+/* -- the rail ----------------------------------------------------------- */
+
+function buildRail(host, width, height) {
+  const pad = 26;
+  const span = width - pad * 2;
+  const step = span / (STAGES.length - 1);
+  const y = height * 0.42;
+
+  const stages = STAGES.map((label, i) => {
+    const x = pad + step * i;
+    return `<g class="stage">
+        <circle class="node" cx="${x}" cy="${y}" r="5"></circle>
+        <text class="label" x="${x}" y="${y + 19}">${esc(label)}</text>
+      </g>`;
+  }).join("");
+
+  host.style.setProperty("--rail-span", span + "px");
+  host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img"
+      aria-label="Pipeline: ${STAGES.join(", ")}">
+      <defs>
+        <linearGradient id="sweepgrad" x1="0" x2="1">
+          <stop offset="0"  stop-color="#4a9fd8" stop-opacity="0"></stop>
+          <stop offset=".5" stop-color="#4a9fd8" stop-opacity=".5"></stop>
+          <stop offset="1"  stop-color="#4a9fd8" stop-opacity="0"></stop>
+        </linearGradient>
+      </defs>
+      <line class="track" x1="${pad}" y1="${y}" x2="${pad + span}" y2="${y}"></line>
+      <rect class="sweep" x="${pad}" y="${y - 4}" width="${span * 0.16}"
+            height="8" fill="url(#sweepgrad)" rx="4"></rect>
+      ${stages}
+      <circle class="token" cx="${pad}" cy="${y}" r="3.5"></circle>
+    </svg>`;
+}
+
+function lightStages(host, count) {
+  host.querySelectorAll(".stage").forEach((stage, i) =>
+    stage.classList.toggle("lit", i < count));
+}
+
+/** Walks the rail one stage at a time. Doubles as the loading state. */
+function runRail(host) {
+  if (REDUCED) { lightStages(host, STAGES.length); return; }
+  let i = 0;
+  lightStages(host, 0);
+  const tick = () => {
+    i += 1;
+    lightStages(host, i);
+    if (i < STAGES.length) setTimeout(tick, 90);
+  };
+  setTimeout(tick, 40);
+}
+
+function scanning(on) {
+  $("head-rail").classList.toggle("scanning", on && !REDUCED);
+}
+
+/* -- intro -------------------------------------------------------------- */
+
+function enterConsole() {
+  const intro = $("intro");
+  if (!intro || intro.classList.contains("done")) return;
+  intro.classList.add("done");
+  $("console").classList.add("ready");
+  $("head-rail").classList.add("settled");
+  lightStages($("head-rail"), STAGES.length);
+  setTimeout(() => intro.remove(), 450);
+}
+
+function startIntro() {
+  buildRail($("intro-rail"), 620, 74);
+  buildRail($("head-rail"), 560, 46);
+  $("head-rail").classList.add("settled");
+
+  if (REDUCED) { enterConsole(); return; }
+
+  const rail = $("intro-rail");
+  rail.querySelectorAll(".stage").forEach((stage, i) => {
+    stage.querySelector(".node").style.animationDelay = (300 + i * 90) + "ms";
+    stage.querySelector(".label").style.animationDelay = (660 + i * 90) + "ms";
+    setTimeout(() => stage.classList.add("lit"), 700 + i * 110);
+  });
+
+  setTimeout(enterConsole, 1750);
+}
+
+$("skip").addEventListener("click", enterConsole);
+document.addEventListener("keydown", (event) => {
+  const intro = $("intro");
+  if (!intro || intro.classList.contains("done")) return;
+  if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    enterConsole();
+  }
+});
+
+/* -- connection status: animates only when it changes -------------------- */
+
+function setStatus(state, label) {
+  if (connState === state) return;
+  connState = state;
+  const pill = $("conn");
+  pill.classList.remove("ok", "warn", "bad");
+  pill.classList.add(state);
+  $("conn-text").textContent = label;
+}
+
+/* -- statistics --------------------------------------------------------- */
+
+async function loadStats() {
+  try {
+    const stats = await get("/stats");
+    const counts = stats.verdicts || {};
+    const cells = [
+      ["queries", stats.totals.queries, ""],
+      ["allowed", counts.ALLOW || 0, "allow"],
+      ["flagged", counts.FLAG || 0, "flag"],
+      ["blocked", counts.BLOCK || 0, "block"],
+      ["unknown", counts.UNKNOWN || 0, "unknown"],
+      ["mean added latency", num(stats.latency_ms.avg_added, 3) + " ms", ""],
+      ["feeds loaded", (stats.feeds || []).length, ""]
+    ];
+    $("stats").classList.remove("stale");
+    $("stats").innerHTML = cells.map(([k, v, tone]) =>
+      `<div class="stat"><div class="n ${tone}">${esc(v)}</div>
+        <div class="k">${esc(k)}</div></div>`).join("");
+  } catch (err) {
+    if ($("stats").querySelector(".stat")) {
+      $("stats").classList.add("stale");   /* keep last known, mark it stale */
+    } else {
+      $("stats").innerHTML =
+        `<span class="dim">Statistics unavailable: ${esc(err.message)}</span>`;
+    }
+  }
+}
+
+/* -- activity feed ------------------------------------------------------ */
+
+function emptyState() {
+  return `<div class="empty">
+      <strong>No decisions stored yet</strong>
+      Start the DNS proxy and send it a query, then this feed will fill.
+      <div><code>python -m proxy.dns_proxy</code></div>
+    </div>`;
+}
+
+async function loadFeed() {
+  const params = new URLSearchParams({ limit: "50" });
+  const verdict = $("filter-verdict").value;
+  const qname = $("filter-qname").value.trim();
+  if (verdict) params.set("verdict", verdict);
+  if (qname) params.set("qname", qname);
+
+  try {
+    const page = await get("/decisions?" + params.toString());
+    $("feed-error").innerHTML = "";
+    $("feed").classList.remove("stale");
+    setStatus("ok", "Connected");
+    $("feed-count").textContent = page.total ? `${page.count} of ${page.total}` : "";
+
+    if (!page.decisions.length) {
+      $("feed").innerHTML = (verdict || qname)
+        ? `<div class="empty"><strong>Nothing matches that filter</strong>
+             Clear it to see all stored decisions.</div>`
+        : emptyState();
+      seenIds = new Set();
+      return;
+    }
+
+    const known = seenIds;
+    const markup = page.decisions.map((d) => {
+      const isNew = known.size > 0 && !known.has(d.id);
+      const enforced = d.enforcement && d.enforcement.applied;
+      const hue = `var(--${verdictClass(d.verdict).toLowerCase()})`;
+      const name = d.qname === null ? "(malformed query)" : d.qname;
+      const dashed = (!enforced && d.verdict === "BLOCK") ? "observed" : "";
+      return `<div class="row ${isNew ? "fresh" : ""}" role="button" tabindex="0"
+                   data-id="${esc(d.id)}" aria-selected="${d.id === selectedId}">
+          <span class="edge" style="background:${hue}"></span>
+          <span class="id">${esc(d.id)}</span>
+          <span class="name">${esc(name)}</span>
+          ${badge(d.verdict, dashed)}
+          <span class="sc">${num(d.score, 2)}</span>
+        </div>`;
+    }).join("");
+
+    $("feed").innerHTML = markup;
+    seenIds = new Set(page.decisions.map((d) => d.id));
+
+    $("feed").querySelectorAll(".row").forEach((row) => {
+      const open = () => selectDecision(Number(row.dataset.id));
+      row.addEventListener("click", open);
+      row.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          open();
+        }
+      });
+    });
+  } catch (err) {
+    setStatus("bad", "Database unreachable");
+    $("feed-error").innerHTML =
+      `<p class="alert">Cannot read decisions: ${esc(err.message)}</p>`;
+    $("feed").classList.add("stale");     /* keep the last view, dimmed */
+  }
+}
+
+/* -- the weight track --------------------------------------------------- */
+
+function verdictLevel(score, thresholds) {
+  if (thresholds.block_at !== undefined && score >= thresholds.block_at) return "block";
+  if (thresholds.flag_at !== undefined && score >= thresholds.flag_at) return "flag";
+  return "allow";
+}
+
+/** Draws score x weight = contribution, to scale, against the thresholds. */
+function weightTrack(score, explanation) {
+  const contributions = (explanation && explanation.contributions) || [];
+  const thresholds = (explanation && explanation.thresholds) || {};
+  const level = verdictLevel(score, thresholds);
+
+  const slots = contributions.length
+    ? contributions.map((c) => {
+        const weight = Number(c.weight) || 0;
+        const value = Math.max(0, Math.min(1, Number(c.score) || 0));
+        /* An excluded module gets a fixed sliver and no weight: it must never
+           widen the denominator the aggregate is divided by. */
+        const grow = c.counted ? Math.max(weight, 0.05) : 0.14;
+        const fill = c.counted
+          ? `<span class="fill" data-fill="${value}"
+                   style="background:var(--${level})"></span>` : "";
+        return `<div class="slot ${c.counted ? "" : "excluded"}"
+                     style="flex-grow:${grow}">${fill}
+            <span class="tag">${esc(c.module)}</span></div>`;
+      }).join("")
+    : `<div class="slot" style="flex-grow:1">
+         <span class="tag dim">no contributing signals</span></div>`;
+
+  const gate = (at, label) => (at === null || at === undefined) ? "" :
+    `<span class="gate ${score >= at ? "hit" : ""}" data-at="${at}"
+       style="left:${at * 100}%"><b>${esc(label)} ${at}</b></span>`;
+
+  /* Signals that contributed nothing to *this* decision, split by whether
+     they exist at all. Neither kind is ever drawn with a score. */
+  const absent = ROADMAP.filter((name) =>
+    !contributions.some((c) => c.module === name));
+  const missing = absent.map((name) => availableModules.includes(name)
+    ? `${name} &middot; not enabled` : `${name} &middot; not implemented`);
+
+  return `<div class="score-line">
+      <span class="value" id="score-value">0.000</span>
+      <span class="of">risk score &middot;
+        ${esc((explanation && explanation.method) || "no aggregation")}</span>
+    </div>
+    <div class="track-wrap">
+      <div class="track">${slots}</div>
+      ${gate(thresholds.flag_at, "flag")}${gate(thresholds.block_at, "block")}
+    </div>
+    ${missing.length ? `<div class="roadmap">${missing.map((m) =>
+      `<span>${m}</span>`).join("")}</div>` : ""}`;
+}
+
+/** Fills animate after insertion so the transition has a start state. */
+function animateTrack(root, score) {
+  requestAnimationFrame(() => {
+    root.querySelectorAll(".fill").forEach((fill) => {
+      fill.style.transform = `scaleX(${fill.dataset.fill})`;
+    });
+    const gates = [...root.querySelectorAll(".gate")]
+      .filter((g) => Number(score) >= Number(g.dataset.at));
+    const nearest = gates[gates.length - 1];
+    if (nearest && !REDUCED) {
+      nearest.classList.add("pulse");
+      setTimeout(() => nearest.classList.remove("pulse"), 500);
+    }
+  });
+
+  const target = root.querySelector("#score-value");
+  if (!target) return;
+
+  const to = Number(score) || 0;
+  if (REDUCED) { target.textContent = num(to, 3); lastScore = to; return; }
+
+  const from = lastScore, started = performance.now();
+  const step = (now) => {
+    const t = Math.min(1, (now - started) / 450);
+    const eased = 1 - Math.pow(1 - t, 3);
+    target.textContent = (from + (to - from) * eased).toFixed(3);
+    if (t < 1) requestAnimationFrame(step);
+    else lastScore = to;
+  };
+  requestAnimationFrame(step);
+}
+
+/* -- evidence ----------------------------------------------------------- */
+
+function featureList(features) {
+  const keys = Object.keys(features || {});
+  if (!keys.length) return "";
+  return `<dl class="features">` + keys.map((key) => {
+    const value = features[key];
+    const shown = (value !== null && typeof value === "object")
+      ? JSON.stringify(value) : String(value);
+    return `<dt>${esc(key)}</dt><dd>${esc(shown)}</dd>`;
+  }).join("") + `</dl>`;
+}
+
+function contributionTrace(explanation) {
+  if (!explanation) {
+    return `<p class="note">No aggregation trace was stored for this decision.
+      Decisions made by the allow-all engine, or before the risk aggregator
+      existed, have none.</p>`;
+  }
+  const contributions = explanation.contributions || [];
+  const widest = Math.max(0.0001,
+    ...contributions.map((c) => Math.abs(c.weighted || 0)));
+
+  const lines = contributions.map((c, i) => `
+      <div class="module reveal" style="animation-delay:${i * 60}ms">
+        <div class="module-head">
+          <span class="module-name">${esc(c.module)}</span>
+          <span class="math">${num(c.score, 2)} &times; ${num(c.weight, 2)}
+            = ${num(c.weighted, 3)}${c.counted ? "" : " &middot; not counted"}</span>
+        </div>
+        <div class="contrib"><i class="${c.counted ? "" : "excluded"}"
+          data-fill="${Math.abs(c.weighted || 0) / widest}"></i></div>
+      </div>`).join("");
+
+  const excluded = explanation.excluded || [];
+  return lines + `<dl class="kv" style="margin-top:10px">
+      <dt>counted weight</dt><dd class="mono">${num(explanation.counted_weight, 2)}</dd>
+      ${excluded.length ? `<dt>excluded</dt><dd class="mono">${esc(excluded.join(", "))}</dd>` : ""}
+      ${explanation.reason ? `<dt>reason</dt><dd>${esc(explanation.reason)}</dd>` : ""}
+    </dl>` + (explanation.weights_are_tuned === false
+      ? `<p class="note">Weights are configured defaults. They have not been
+           tuned against measured false positives.</p>` : "");
+}
+
+function enforcementBlock(enforcement) {
+  if (!enforcement) return "";
+  const applied = enforcement.applied;
+  return `<fieldset><legend>Enforcement</legend>
+      <dl class="kv">
+        <dt>Would block</dt><dd>${enforcement.would_block ? "yes" : "no"}</dd>
+        <dt>Enforcement on</dt><dd>${enforcement.enabled ? "yes" : "no"}</dd>
+        <dt>Acted on</dt><dd><strong>${applied
+          ? "yes — the query was blocked"
+          : "no — the query was forwarded"}</strong></dd>
+      </dl>
+      ${enforcement.not_applied_reason
+        ? `<p class="note">${esc(enforcement.not_applied_reason)}</p>` : ""}
+    </fieldset>`;
+}
+
+function revealIn(root) {
+  requestAnimationFrame(() => {
+    root.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
+    root.querySelectorAll(".contrib > i").forEach((bar) => {
+      bar.style.transform = `scaleX(${bar.dataset.fill})`;
+    });
+  });
+}
+
+async function selectDecision(id) {
+  selectedId = id;
+  $("feed").querySelectorAll(".row").forEach((row) =>
+    row.setAttribute("aria-selected", String(Number(row.dataset.id) === id)));
+  $("investigation").classList.add("open");
+  $("trace-id").textContent = `decision ${id}`;
+
+  const trace = $("trace");
+  trace.classList.add("leaving");
+  scanning(true);
+  runRail($("head-rail"));
+
+  try {
+    const evidence = await get(`/decisions/${id}/evidence`);
+    const explanation = evidence.explanation;
+    const enforcement = explanation && explanation.enforcement;
+    const applied = enforcement && enforcement.applied;
+
+    const modules = (evidence.modules || []).length
+      ? evidence.modules.map((m, i) => `
+          <div class="module reveal" style="animation-delay:${i * 60}ms">
+            <div class="module-head">
+              <span class="module-name">${esc(m.module)}</span>
+              <span class="math">${m.status === "ok"
+                ? `score ${num(m.score, 2)}`
+                : `no score &mdash; ${esc(m.status)}`} &middot;
+                ${num(m.latency_ms, 3)} ms</span>
+            </div>
+            ${featureList(m.features)}
+          </div>`).join("")
+      : `<p class="note">No module evidence was stored for this decision.</p>`;
+
+    trace.classList.remove("leaving");
+    trace.innerHTML = `
+      <dl class="kv reveal">
+        <dt>name</dt><dd class="mono">${esc(evidence.qname || "(malformed query)")}</dd>
+        <dt>Policy verdict</dt>
+        <dd>${badge(evidence.verdict, applied ? "bloom" : "observed")}
+          ${applied ? "" : `<span class="dim" style="font-size:11.5px">
+            recorded, not enforced</span>`}</dd>
+      </dl>
+      ${explanation && explanation.summary
+        ? `<p class="summary reveal" style="animation-delay:60ms">
+             ${esc(explanation.summary)}</p>` : ""}
+      <div class="reveal" style="animation-delay:80ms">
+        ${weightTrack(evidence.score, explanation)}</div>
+      <div class="reveal" style="animation-delay:140ms">
+        ${enforcementBlock(enforcement)}</div>
+      <fieldset class="reveal" style="animation-delay:200ms">
+        <legend>Signals</legend>${modules}</fieldset>
+      <fieldset class="reveal" style="animation-delay:260ms">
+        <legend>How the score was reached</legend>
+        ${contributionTrace(explanation)}</fieldset>`;
+
+    revealIn(trace);
+    animateTrack(trace, evidence.score);
+  } catch (err) {
+    trace.classList.remove("leaving");
+    trace.innerHTML = `<p class="alert">Cannot load evidence: ${esc(err.message)}</p>`;
+  } finally {
+    scanning(false);
+  }
+}
+
+/* -- lookup ------------------------------------------------------------- */
+
+async function runLookup() {
+  const field = $("lookup-domain");
+  const domain = field.value.trim();
+  if (!domain) return;
+
+  field.classList.remove("invalid");
+  $("lookup-go").disabled = true;
+  scanning(true);
+  runRail($("head-rail"));
+  $("lookup-out").innerHTML =
+    `<p class="dim" style="margin-top:12px">Checking&hellip;</p>`;
+
+  try {
+    const result = await send("/lookup", "POST", { domain });
+    const explanation = result.explanation;
+    lastScore = 0;
+    $("lookup-out").innerHTML = `
+      <dl class="kv reveal" style="margin-top:12px">
+        <dt>name</dt><dd class="mono">${esc(result.qname)}</dd>
+        <dt>Policy verdict</dt><dd>${badge(result.verdict, "observed")}</dd>
+        <dt>evaluated in</dt><dd class="mono">${num(result.evaluation_ms, 3)} ms</dd>
+      </dl>
+      ${explanation && explanation.summary
+        ? `<p class="summary reveal" style="animation-delay:60ms">
+             ${esc(explanation.summary)}</p>` : ""}
+      <div class="reveal" style="animation-delay:80ms">
+        ${weightTrack(result.score, explanation)}</div>
+      <fieldset class="reveal" style="animation-delay:160ms">
+        <legend>How the score was reached</legend>
+        ${contributionTrace(explanation)}</fieldset>`;
+    revealIn($("lookup-out"));
+    animateTrack($("lookup-out"), result.score);
+  } catch (err) {
+    field.classList.add("invalid");
+    $("lookup-out").innerHTML =
+      `<p class="alert" style="margin-top:12px">${esc(err.message)}</p>`;
+  } finally {
+    $("lookup-go").disabled = false;
+    scanning(false);
+  }
+}
+
+/* -- configuration ------------------------------------------------------ */
+
+function renderMode(mode) {
+  const live = (mode.modules || []).map((m) => m.name);
+  const modules = (mode.modules || []).map((m) => `
+      <label style="display:flex; gap:7px; align-items:center; margin:3px 0">
+        <input type="checkbox" data-module="${esc(m.name)}"
+          ${m.enabled ? "checked" : ""}>
+        <span class="mono">${esc(m.name)}</span></label>`).join("");
+
+  availableModules = mode.available_modules || [];
+  const idle = availableModules.filter((name) => !live.includes(name));
+  const planned = ROADMAP.filter((name) =>
+    !live.includes(name) && !availableModules.includes(name));
+
+  $("mode").innerHTML = `
+    <dl class="kv">
+      <dt>engine</dt><dd class="mono">${esc(mode.engine)}</dd>
+      <dt>flag at</dt><dd class="mono">${esc(mode.thresholds.flag_at)}</dd>
+      <dt>block at</dt><dd class="mono">${esc(mode.thresholds.block_at)}</dd>
+      <dt>block response</dt><dd class="mono">${esc(mode.block_response)}</dd>
+      <dt>fail mode</dt><dd class="mono">${esc(mode.enforcement.fail_mode)}</dd>
+    </dl>
+    <fieldset style="margin-top:12px"><legend>Signals</legend>${modules}
+      <label style="display:flex; gap:7px; align-items:center; margin:3px 0">
+        <input type="checkbox" id="mode-enforce"
+          ${mode.enforcement.enabled ? "checked" : ""}> enforcement</label>
+    </fieldset>
+    ${idle.length ? `<div class="roadmap">${idle.map((m) =>
+      `<span>${esc(m)} &middot; implemented, not enabled</span>`).join("")}</div>` : ""}
+    ${planned.length ? `<div class="roadmap">${planned.map((m) =>
+      `<span>${esc(m)} &middot; not implemented</span>`).join("")}</div>` : ""}
+    <p class="note"><strong>These switches change this API process only.</strong>
+      ${esc(mode.scope)}</p>
+    <p class="note dim" id="mode-status"></p>`;
+
+  $("mode").querySelectorAll("[data-module]").forEach((box) => {
+    box.addEventListener("change", () =>
+      putMode({ modules: { [box.dataset.module]: box.checked } }));
+  });
+  $("mode-enforce").addEventListener("change", (event) =>
+    putMode({ enforce: event.target.checked }));
+}
+
+async function putMode(payload) {
+  try {
+    const mode = await send("/mode", "PUT", payload);
+    renderMode(mode);
+    $("mode-status").textContent = "Changed: " + (mode.changed || []).join(", ")
+      + " — the running DNS proxy is unaffected.";
+  } catch (err) {
+    await loadMode();
+    $("mode-status").textContent = "Not changed: " + err.message;
+  }
+}
+
+async function loadMode() {
+  try {
+    renderMode(await get("/mode"));
+  } catch (err) {
+    $("mode").innerHTML =
+      `<p class="alert">Cannot read the configuration: ${esc(err.message)}</p>`;
+  }
+}
+
+/* -- wiring ------------------------------------------------------------- */
+
+function setAuto(on) {
+  if (timer) { clearInterval(timer); timer = null; }
+  if (on) timer = setInterval(() => { loadFeed(); loadStats(); }, 5000);
+}
+
+$("refresh").addEventListener("click", () => { loadFeed(); loadStats(); });
+$("filter-verdict").addEventListener("change", loadFeed);
+$("filter-qname").addEventListener("input", loadFeed);
+$("auto").addEventListener("change", (e) => setAuto(e.target.checked));
+$("lookup-go").addEventListener("click", runLookup);
+$("lookup-domain").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") runLookup();
+});
+$("back").addEventListener("click", () =>
+  $("investigation").classList.remove("open"));
+
+/* Signing out destroys the session server-side, so a copy of the cookie
+   captured beforehand is useless afterwards. Clearing it in the browser
+   alone would not achieve that. */
+$("signout").addEventListener("click", async () => {
+  try {
+    await fetch("/auth/logout", { method: "POST",
+                                  credentials: "same-origin" });
+  } finally {
+    window.location.replace("/login");
+  }
+});
+
+/* Show the control only when there is a session to end. */
+(async () => {
+  try {
+    const state = await get("/auth/session");
+    if (state.auth_enabled && state.authenticated) {
+      $("signout").style.display = "inline-flex";
+      $("signout").title = `Signed in as ${state.username}`;
+    }
+  } catch (err) {
+    /* handleUnauthorised has already redirected. */
+  }
+})();
+
+window.addEventListener("resize", () => {
+  buildRail($("head-rail"), Math.max(320, Math.min(560, window.innerWidth - 60)), 46);
+  $("head-rail").classList.add("settled");
+  lightStages($("head-rail"), STAGES.length);
+});
+
+/* Requests start immediately; the intro never gates them. */
+startIntro();
+loadStats();
+loadFeed();
+loadMode();
+setAuto(true);
+</script>
+</body>
+</html>

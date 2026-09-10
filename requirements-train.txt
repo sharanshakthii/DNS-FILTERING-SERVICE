@@ -1,0 +1,10 @@
+# Training-only dependencies for the DGA classifier (Stage 13).
+#
+# NOT required to run the DNS proxy, the API, or the test suite. The trained
+# model is exported as plain JSON and inference uses the standard library
+# only, so the DNS query path keeps its zero-dependency property.
+#
+#   pip install -r requirements-train.txt
+#   python tools/train_dga.py
+
+scikit-learn>=1.3

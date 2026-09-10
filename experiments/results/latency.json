@@ -1,0 +1,1539 @@
+{
+  "caveat": "Measured on one machine. Unlike detection accuracy, a timing measurement does not depend on the dataset labels being correct, so these are real measurements of this implementation. They are still hardware-specific: absolute milliseconds will differ elsewhere. Mode B resolves against a loopback stub, not a real resolver, so upstream time is unnaturally small and stable \u2014 which is deliberate, so that added latency is not swamped by internet variance, but it means the total is not a realistic end-user figure. The portable results are the comparisons: the per-module ranking, and added latency relative to a resolution.",
+  "dataset": {
+    "path": "eval_dev.csv",
+    "rows": 720,
+    "sha256": "05687f27ee39e8b12f11a99dc36e44754599b975ef759b436bc29cc5d25f2202"
+  },
+  "generated_at": "2026-09-07T12:54:16.461201+00:00",
+  "machine": "Linux-6.18.44-fc-v24-x86_64-with-glibc2.39",
+  "mode_a_engine_only": [
+    {
+      "aggregate_count": 2140,
+      "aggregate_max": 0.0324,
+      "aggregate_mean": 0.0011,
+      "aggregate_min": 0.0007,
+      "aggregate_p50": 0.0009,
+      "aggregate_p90": 0.0011,
+      "aggregate_p99": 0.0034,
+      "aggregate_stdev": 0.001,
+      "configuration": "none",
+      "mode": "A",
+      "modules": "(none)",
+      "modules_count": 2140,
+      "modules_max": 0.003,
+      "modules_mean": 0.0001,
+      "modules_min": 0.0001,
+      "modules_p50": 0.0001,
+      "modules_p90": 0.0002,
+      "modules_p99": 0.0005,
+      "modules_stdev": 0.0001,
+      "per_module": {},
+      "per_run": [
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0152,
+            "mean": 0.0011,
+            "min": 0.0008,
+            "p50": 0.0009,
+            "p90": 0.0015,
+            "p99": 0.0042,
+            "stdev": 0.0008
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.003,
+            "mean": 0.0001,
+            "min": 0.0001,
+            "p50": 0.0001,
+            "p90": 0.0002,
+            "p99": 0.0005,
+            "stdev": 0.0002
+          },
+          "queries": 720,
+          "run": 0,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0155,
+            "mean": 0.0013,
+            "min": 0.0009,
+            "p50": 0.001,
+            "p90": 0.0018,
+            "p99": 0.0046,
+            "stdev": 0.0008
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0324,
+            "mean": 0.0011,
+            "min": 0.0008,
+            "p50": 0.0009,
+            "p90": 0.0011,
+            "p99": 0.0026,
+            "stdev": 0.0013
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0017,
+            "mean": 0.0001,
+            "min": 0.0001,
+            "p50": 0.0001,
+            "p90": 0.0002,
+            "p99": 0.0013,
+            "stdev": 0.0002
+          },
+          "queries": 720,
+          "run": 1,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0326,
+            "mean": 0.0012,
+            "min": 0.001,
+            "p50": 0.0011,
+            "p90": 0.0012,
+            "p99": 0.0029,
+            "stdev": 0.0014
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0139,
+            "mean": 0.001,
+            "min": 0.0007,
+            "p50": 0.0009,
+            "p90": 0.001,
+            "p99": 0.0026,
+            "stdev": 0.0007
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0025,
+            "mean": 0.0001,
+            "min": 0.0001,
+            "p50": 0.0001,
+            "p90": 0.0001,
+            "p99": 0.0003,
+            "stdev": 0.0001
+          },
+          "queries": 720,
+          "run": 2,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.014,
+            "mean": 0.0011,
+            "min": 0.0008,
+            "p50": 0.001,
+            "p90": 0.0012,
+            "p99": 0.0029,
+            "stdev": 0.0007
+          }
+        }
+      ],
+      "queries_timed": 2160,
+      "total_count": 2140,
+      "total_max": 0.0326,
+      "total_mean": 0.0012,
+      "total_min": 0.0008,
+      "total_p50": 0.001,
+      "total_p90": 0.0014,
+      "total_p99": 0.0037,
+      "total_stdev": 0.001
+    },
+    {
+      "aggregate_count": 2140,
+      "aggregate_max": 0.0304,
+      "aggregate_mean": 0.0031,
+      "aggregate_min": 0.0025,
+      "aggregate_p50": 0.0028,
+      "aggregate_p90": 0.0033,
+      "aggregate_p99": 0.0078,
+      "aggregate_stdev": 0.0015,
+      "configuration": "ti",
+      "mode": "A",
+      "modules": "ti",
+      "modules_count": 2140,
+      "modules_max": 0.0245,
+      "modules_mean": 0.0038,
+      "modules_min": 0.003,
+      "modules_p50": 0.0034,
+      "modules_p90": 0.0043,
+      "modules_p99": 0.0112,
+      "modules_stdev": 0.0016,
+      "per_module": {
+        "ti": {
+          "count": 2140,
+          "label": "ti",
+          "max": 0.0219,
+          "mean": 0.0028,
+          "min": 0.0021,
+          "p50": 0.0025,
+          "p90": 0.0033,
+          "p99": 0.0087,
+          "stdev": 0.0014
+        }
+      },
+      "per_run": [
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.03,
+            "mean": 0.003,
+            "min": 0.0026,
+            "p50": 0.0028,
+            "p90": 0.0032,
+            "p99": 0.0064,
+            "stdev": 0.0013
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0245,
+            "mean": 0.0037,
+            "min": 0.003,
+            "p50": 0.0034,
+            "p90": 0.0041,
+            "p99": 0.0102,
+            "stdev": 0.0017
+          },
+          "queries": 720,
+          "run": 0,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0378,
+            "mean": 0.0067,
+            "min": 0.0056,
+            "p50": 0.0062,
+            "p90": 0.0073,
+            "p99": 0.0178,
+            "stdev": 0.0025
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0243,
+            "mean": 0.0031,
+            "min": 0.0025,
+            "p50": 0.0028,
+            "p90": 0.0033,
+            "p99": 0.0075,
+            "stdev": 0.0012
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0207,
+            "mean": 0.0038,
+            "min": 0.003,
+            "p50": 0.0034,
+            "p90": 0.0045,
+            "p99": 0.0112,
+            "stdev": 0.0016
+          },
+          "queries": 720,
+          "run": 1,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0275,
+            "mean": 0.0069,
+            "min": 0.0055,
+            "p50": 0.0062,
+            "p90": 0.0083,
+            "p99": 0.0171,
+            "stdev": 0.0023
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0304,
+            "mean": 0.0032,
+            "min": 0.0026,
+            "p50": 0.0028,
+            "p90": 0.0034,
+            "p99": 0.0084,
+            "stdev": 0.0018
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0212,
+            "mean": 0.0038,
+            "min": 0.003,
+            "p50": 0.0034,
+            "p90": 0.0045,
+            "p99": 0.0104,
+            "stdev": 0.0015
+          },
+          "queries": 720,
+          "run": 2,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.038,
+            "mean": 0.007,
+            "min": 0.0056,
+            "p50": 0.0062,
+            "p90": 0.0084,
+            "p99": 0.0188,
+            "stdev": 0.0027
+          }
+        }
+      ],
+      "queries_timed": 2160,
+      "total_count": 2140,
+      "total_max": 0.038,
+      "total_mean": 0.0069,
+      "total_min": 0.0055,
+      "total_p50": 0.0062,
+      "total_p90": 0.0078,
+      "total_p99": 0.019,
+      "total_stdev": 0.0025
+    },
+    {
+      "aggregate_count": 2140,
+      "aggregate_max": 0.0316,
+      "aggregate_mean": 0.0031,
+      "aggregate_min": 0.0025,
+      "aggregate_p50": 0.0028,
+      "aggregate_p90": 0.0033,
+      "aggregate_p99": 0.008,
+      "aggregate_stdev": 0.0012,
+      "configuration": "nrd",
+      "mode": "A",
+      "modules": "nrd",
+      "modules_count": 2140,
+      "modules_max": 0.4024,
+      "modules_mean": 0.0037,
+      "modules_min": 0.0028,
+      "modules_p50": 0.0032,
+      "modules_p90": 0.0037,
+      "modules_p99": 0.0098,
+      "modules_stdev": 0.0088,
+      "per_module": {
+        "nrd": {
+          "count": 2140,
+          "label": "nrd",
+          "max": 0.398,
+          "mean": 0.0027,
+          "min": 0.002,
+          "p50": 0.0023,
+          "p90": 0.0027,
+          "p99": 0.0072,
+          "stdev": 0.0086
+        }
+      },
+      "per_run": [
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0316,
+            "mean": 0.003,
+            "min": 0.0025,
+            "p50": 0.0028,
+            "p90": 0.0032,
+            "p99": 0.0069,
+            "stdev": 0.0013
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0264,
+            "mean": 0.0034,
+            "min": 0.0028,
+            "p50": 0.0031,
+            "p90": 0.0036,
+            "p99": 0.0091,
+            "stdev": 0.0014
+          },
+          "queries": 720,
+          "run": 0,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0349,
+            "mean": 0.0064,
+            "min": 0.0055,
+            "p50": 0.006,
+            "p90": 0.0067,
+            "p99": 0.0134,
+            "stdev": 0.0021
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0176,
+            "mean": 0.0031,
+            "min": 0.0025,
+            "p50": 0.0028,
+            "p90": 0.0033,
+            "p99": 0.008,
+            "stdev": 0.001
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.4024,
+            "mean": 0.0041,
+            "min": 0.0028,
+            "p50": 0.0032,
+            "p90": 0.0037,
+            "p99": 0.0115,
+            "stdev": 0.0152
+          },
+          "queries": 720,
+          "run": 1,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.4108,
+            "mean": 0.0072,
+            "min": 0.0055,
+            "p50": 0.006,
+            "p90": 0.0074,
+            "p99": 0.0183,
+            "stdev": 0.0154
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0257,
+            "mean": 0.0031,
+            "min": 0.0025,
+            "p50": 0.0028,
+            "p90": 0.0033,
+            "p99": 0.0083,
+            "stdev": 0.0014
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0252,
+            "mean": 0.0036,
+            "min": 0.0028,
+            "p50": 0.0032,
+            "p90": 0.0039,
+            "p99": 0.0097,
+            "stdev": 0.0017
+          },
+          "queries": 720,
+          "run": 2,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0345,
+            "mean": 0.0067,
+            "min": 0.0054,
+            "p50": 0.006,
+            "p90": 0.0075,
+            "p99": 0.0143,
+            "stdev": 0.0025
+          }
+        }
+      ],
+      "queries_timed": 2160,
+      "total_count": 2140,
+      "total_max": 0.4108,
+      "total_mean": 0.0068,
+      "total_min": 0.0054,
+      "total_p50": 0.006,
+      "total_p90": 0.0073,
+      "total_p99": 0.0167,
+      "total_stdev": 0.009
+    },
+    {
+      "aggregate_count": 2140,
+      "aggregate_max": 0.0257,
+      "aggregate_mean": 0.0042,
+      "aggregate_min": 0.0028,
+      "aggregate_p50": 0.0039,
+      "aggregate_p90": 0.0052,
+      "aggregate_p99": 0.0087,
+      "aggregate_stdev": 0.0013,
+      "configuration": "typosquat",
+      "mode": "A",
+      "modules": "typosquat",
+      "modules_count": 2140,
+      "modules_max": 0.1297,
+      "modules_mean": 0.0536,
+      "modules_min": 0.0219,
+      "modules_p50": 0.0524,
+      "modules_p90": 0.0727,
+      "modules_p99": 0.0967,
+      "modules_stdev": 0.0157,
+      "per_module": {
+        "typosquat": {
+          "count": 2140,
+          "label": "typosquat",
+          "max": 0.1271,
+          "mean": 0.0518,
+          "min": 0.0208,
+          "p50": 0.0508,
+          "p90": 0.0705,
+          "p99": 0.094,
+          "stdev": 0.0154
+        }
+      },
+      "per_run": [
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0237,
+            "mean": 0.0043,
+            "min": 0.0031,
+            "p50": 0.004,
+            "p90": 0.0053,
+            "p99": 0.009,
+            "stdev": 0.0014
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.1224,
+            "mean": 0.0543,
+            "min": 0.0228,
+            "p50": 0.054,
+            "p90": 0.0728,
+            "p99": 0.0973,
+            "stdev": 0.0154
+          },
+          "queries": 720,
+          "run": 0,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.1283,
+            "mean": 0.0585,
+            "min": 0.0268,
+            "p50": 0.0581,
+            "p90": 0.0784,
+            "p99": 0.1027,
+            "stdev": 0.0158
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0257,
+            "mean": 0.0042,
+            "min": 0.0028,
+            "p50": 0.0039,
+            "p90": 0.0051,
+            "p99": 0.0089,
+            "stdev": 0.0015
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.1297,
+            "mean": 0.0532,
+            "min": 0.0219,
+            "p50": 0.051,
+            "p90": 0.0724,
+            "p99": 0.0967,
+            "stdev": 0.0159
+          },
+          "queries": 720,
+          "run": 1,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.135,
+            "mean": 0.0574,
+            "min": 0.0248,
+            "p50": 0.055,
+            "p90": 0.0776,
+            "p99": 0.1045,
+            "stdev": 0.0164
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0164,
+            "mean": 0.0041,
+            "min": 0.0029,
+            "p50": 0.0038,
+            "p90": 0.005,
+            "p99": 0.0078,
+            "stdev": 0.001
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.1139,
+            "mean": 0.0527,
+            "min": 0.0222,
+            "p50": 0.0514,
+            "p90": 0.0717,
+            "p99": 0.0934,
+            "stdev": 0.0157
+          },
+          "queries": 720,
+          "run": 2,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.1194,
+            "mean": 0.0568,
+            "min": 0.0252,
+            "p50": 0.0555,
+            "p90": 0.0766,
+            "p99": 0.0992,
+            "stdev": 0.0162
+          }
+        }
+      ],
+      "queries_timed": 2160,
+      "total_count": 2140,
+      "total_max": 0.135,
+      "total_mean": 0.0578,
+      "total_min": 0.0248,
+      "total_p50": 0.0566,
+      "total_p90": 0.078,
+      "total_p99": 0.1027,
+      "total_stdev": 0.0162
+    },
+    {
+      "aggregate_count": 2140,
+      "aggregate_max": 0.0269,
+      "aggregate_mean": 0.0046,
+      "aggregate_min": 0.0033,
+      "aggregate_p50": 0.0043,
+      "aggregate_p90": 0.0053,
+      "aggregate_p99": 0.0097,
+      "aggregate_stdev": 0.0017,
+      "configuration": "dga",
+      "mode": "A",
+      "modules": "dga",
+      "modules_count": 2140,
+      "modules_max": 0.1154,
+      "modules_mean": 0.0271,
+      "modules_min": 0.0202,
+      "modules_p50": 0.0254,
+      "modules_p90": 0.0323,
+      "modules_p99": 0.0521,
+      "modules_stdev": 0.006,
+      "per_module": {
+        "dga": {
+          "count": 2140,
+          "label": "dga",
+          "max": 0.1117,
+          "mean": 0.0256,
+          "min": 0.0191,
+          "p50": 0.024,
+          "p90": 0.0303,
+          "p99": 0.049,
+          "stdev": 0.0056
+        }
+      },
+      "per_run": [
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.024,
+            "mean": 0.0047,
+            "min": 0.0033,
+            "p50": 0.0043,
+            "p90": 0.0054,
+            "p99": 0.0169,
+            "stdev": 0.002
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.1154,
+            "mean": 0.0274,
+            "min": 0.0202,
+            "p50": 0.0256,
+            "p90": 0.0322,
+            "p99": 0.0552,
+            "stdev": 0.0069
+          },
+          "queries": 720,
+          "run": 0,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.1248,
+            "mean": 0.0321,
+            "min": 0.0237,
+            "p50": 0.03,
+            "p90": 0.0381,
+            "p99": 0.0622,
+            "stdev": 0.0077
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0269,
+            "mean": 0.0046,
+            "min": 0.0034,
+            "p50": 0.0043,
+            "p90": 0.0053,
+            "p99": 0.0097,
+            "stdev": 0.0018
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.066,
+            "mean": 0.027,
+            "min": 0.021,
+            "p50": 0.0253,
+            "p90": 0.0327,
+            "p99": 0.0501,
+            "stdev": 0.0053
+          },
+          "queries": 720,
+          "run": 1,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0721,
+            "mean": 0.0316,
+            "min": 0.0244,
+            "p50": 0.0296,
+            "p90": 0.0381,
+            "p99": 0.0571,
+            "stdev": 0.0061
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0188,
+            "mean": 0.0045,
+            "min": 0.0033,
+            "p50": 0.0043,
+            "p90": 0.0052,
+            "p99": 0.0081,
+            "stdev": 0.0012
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0643,
+            "mean": 0.0269,
+            "min": 0.021,
+            "p50": 0.0253,
+            "p90": 0.032,
+            "p99": 0.0511,
+            "stdev": 0.0056
+          },
+          "queries": 720,
+          "run": 2,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0708,
+            "mean": 0.0314,
+            "min": 0.0245,
+            "p50": 0.0296,
+            "p90": 0.0374,
+            "p99": 0.0589,
+            "stdev": 0.0062
+          }
+        }
+      ],
+      "queries_timed": 2160,
+      "total_count": 2140,
+      "total_max": 0.1248,
+      "total_mean": 0.0317,
+      "total_min": 0.0237,
+      "total_p50": 0.0298,
+      "total_p90": 0.0378,
+      "total_p99": 0.0595,
+      "total_stdev": 0.0067
+    },
+    {
+      "aggregate_count": 2140,
+      "aggregate_max": 0.0189,
+      "aggregate_mean": 0.0034,
+      "aggregate_min": 0.0019,
+      "aggregate_p50": 0.0025,
+      "aggregate_p90": 0.0053,
+      "aggregate_p99": 0.0078,
+      "aggregate_stdev": 0.0017,
+      "configuration": "beaconing",
+      "mode": "A",
+      "modules": "beaconing",
+      "modules_count": 2140,
+      "modules_max": 0.1092,
+      "modules_mean": 0.0196,
+      "modules_min": 0.0025,
+      "modules_p50": 0.0035,
+      "modules_p90": 0.0507,
+      "modules_p99": 0.0779,
+      "modules_stdev": 0.0231,
+      "per_module": {
+        "beaconing": {
+          "count": 2140,
+          "label": "beaconing",
+          "max": 0.1058,
+          "mean": 0.0178,
+          "min": 0.0015,
+          "p50": 0.0021,
+          "p90": 0.0484,
+          "p99": 0.0752,
+          "stdev": 0.0227
+        }
+      },
+      "per_run": [
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0189,
+            "mean": 0.0034,
+            "min": 0.0021,
+            "p50": 0.0025,
+            "p90": 0.0052,
+            "p99": 0.0069,
+            "stdev": 0.0015
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.097,
+            "mean": 0.0187,
+            "min": 0.0028,
+            "p50": 0.0036,
+            "p90": 0.0497,
+            "p99": 0.0763,
+            "stdev": 0.0223
+          },
+          "queries": 720,
+          "run": 0,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.1031,
+            "mean": 0.0221,
+            "min": 0.0051,
+            "p50": 0.0061,
+            "p90": 0.055,
+            "p99": 0.0831,
+            "stdev": 0.0235
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0178,
+            "mean": 0.0035,
+            "min": 0.002,
+            "p50": 0.0025,
+            "p90": 0.0054,
+            "p99": 0.0084,
+            "stdev": 0.0018
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.1092,
+            "mean": 0.0196,
+            "min": 0.0027,
+            "p50": 0.0035,
+            "p90": 0.0515,
+            "p99": 0.0854,
+            "stdev": 0.024
+          },
+          "queries": 720,
+          "run": 1,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.1205,
+            "mean": 0.0231,
+            "min": 0.0049,
+            "p50": 0.0059,
+            "p90": 0.0571,
+            "p99": 0.0913,
+            "stdev": 0.0254
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0183,
+            "mean": 0.0033,
+            "min": 0.0019,
+            "p50": 0.0023,
+            "p90": 0.0053,
+            "p99": 0.0066,
+            "stdev": 0.0016
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.0838,
+            "mean": 0.0184,
+            "min": 0.0025,
+            "p50": 0.0033,
+            "p90": 0.0497,
+            "p99": 0.0708,
+            "stdev": 0.0221
+          },
+          "queries": 720,
+          "run": 2,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.0898,
+            "mean": 0.0217,
+            "min": 0.0045,
+            "p50": 0.0055,
+            "p90": 0.0549,
+            "p99": 0.077,
+            "stdev": 0.0235
+          }
+        }
+      ],
+      "queries_timed": 2160,
+      "total_count": 2140,
+      "total_max": 0.1205,
+      "total_mean": 0.023,
+      "total_min": 0.0045,
+      "total_p50": 0.006,
+      "total_p90": 0.0561,
+      "total_p99": 0.0845,
+      "total_stdev": 0.0245
+    },
+    {
+      "aggregate_count": 2140,
+      "aggregate_max": 0.0411,
+      "aggregate_mean": 0.0102,
+      "aggregate_min": 0.0079,
+      "aggregate_p50": 0.0096,
+      "aggregate_p90": 0.0115,
+      "aggregate_p99": 0.0238,
+      "aggregate_stdev": 0.0028,
+      "configuration": "all",
+      "mode": "A",
+      "modules": "ti,nrd,typosquat,dga,beaconing",
+      "modules_count": 2140,
+      "modules_max": 0.5375,
+      "modules_mean": 0.139,
+      "modules_min": 0.0707,
+      "modules_p50": 0.1327,
+      "modules_p90": 0.1881,
+      "modules_p99": 0.2406,
+      "modules_stdev": 0.0378,
+      "per_module": {
+        "beaconing": {
+          "count": 2140,
+          "label": "beaconing",
+          "max": 0.1246,
+          "mean": 0.0225,
+          "min": 0.0028,
+          "p50": 0.0044,
+          "p90": 0.0598,
+          "p99": 0.0845,
+          "stdev": 0.0263
+        },
+        "dga": {
+          "count": 2140,
+          "label": "dga",
+          "max": 0.0789,
+          "mean": 0.0307,
+          "min": 0.0222,
+          "p50": 0.0293,
+          "p90": 0.0371,
+          "p99": 0.053,
+          "stdev": 0.0058
+        },
+        "nrd": {
+          "count": 2140,
+          "label": "nrd",
+          "max": 0.0384,
+          "mean": 0.0046,
+          "min": 0.0033,
+          "p50": 0.0042,
+          "p90": 0.0051,
+          "p99": 0.0101,
+          "stdev": 0.0019
+        },
+        "ti": {
+          "count": 2140,
+          "label": "ti",
+          "max": 0.0321,
+          "mean": 0.0062,
+          "min": 0.0044,
+          "p50": 0.0058,
+          "p90": 0.0069,
+          "p99": 0.0125,
+          "stdev": 0.0019
+        },
+        "typosquat": {
+          "count": 2140,
+          "label": "typosquat",
+          "max": 0.4294,
+          "mean": 0.065,
+          "min": 0.0259,
+          "p50": 0.0644,
+          "p90": 0.0868,
+          "p99": 0.119,
+          "stdev": 0.0199
+        }
+      },
+      "per_run": [
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0372,
+            "mean": 0.0104,
+            "min": 0.0079,
+            "p50": 0.0098,
+            "p90": 0.0111,
+            "p99": 0.0291,
+            "stdev": 0.003
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.5375,
+            "mean": 0.1397,
+            "min": 0.0723,
+            "p50": 0.1327,
+            "p90": 0.1878,
+            "p99": 0.2272,
+            "stdev": 0.0383
+          },
+          "queries": 720,
+          "run": 0,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.5489,
+            "mean": 0.15,
+            "min": 0.0808,
+            "p50": 0.1432,
+            "p90": 0.1996,
+            "p99": 0.2378,
+            "stdev": 0.0389
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0411,
+            "mean": 0.0103,
+            "min": 0.008,
+            "p50": 0.0093,
+            "p90": 0.0139,
+            "p99": 0.0223,
+            "stdev": 0.0031
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.2608,
+            "mean": 0.1393,
+            "min": 0.0799,
+            "p50": 0.1343,
+            "p90": 0.1856,
+            "p99": 0.2242,
+            "stdev": 0.0334
+          },
+          "queries": 720,
+          "run": 1,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.2768,
+            "mean": 0.1496,
+            "min": 0.089,
+            "p50": 0.1465,
+            "p90": 0.1966,
+            "p99": 0.2397,
+            "stdev": 0.034
+          }
+        },
+        {
+          "aggregate": {
+            "count": 700,
+            "label": "aggregate",
+            "max": 0.0357,
+            "mean": 0.0099,
+            "min": 0.0082,
+            "p50": 0.0096,
+            "p90": 0.0107,
+            "p99": 0.0168,
+            "stdev": 0.0022
+          },
+          "modules": {
+            "count": 700,
+            "label": "modules",
+            "max": 0.3247,
+            "mean": 0.1349,
+            "min": 0.0707,
+            "p50": 0.1278,
+            "p90": 0.1854,
+            "p99": 0.2526,
+            "stdev": 0.0395
+          },
+          "queries": 720,
+          "run": 2,
+          "total": {
+            "count": 700,
+            "label": "total",
+            "max": 0.3414,
+            "mean": 0.1448,
+            "min": 0.0792,
+            "p50": 0.138,
+            "p90": 0.1961,
+            "p99": 0.2645,
+            "stdev": 0.0402
+          }
+        }
+      ],
+      "queries_timed": 2160,
+      "total_count": 2140,
+      "total_max": 0.5489,
+      "total_mean": 0.1492,
+      "total_min": 0.0792,
+      "total_p50": 0.1432,
+      "total_p90": 0.1985,
+      "total_p99": 0.2509,
+      "total_stdev": 0.0384
+    }
+  ],
+  "mode_b_end_to_end": [
+    {
+      "added": {
+        "count": 280,
+        "label": "added",
+        "max": 3.088,
+        "mean": 0.1043,
+        "min": 0.021,
+        "p50": 0.034,
+        "p90": 0.218,
+        "p99": 1.512,
+        "stdev": 0.2662
+      },
+      "case": "baseline_no_modules",
+      "mode": "B",
+      "phases": {
+        "aggregate": {
+          "count": 0,
+          "label": "aggregate",
+          "max": null,
+          "mean": null,
+          "min": null,
+          "p50": null,
+          "p90": null,
+          "p99": null,
+          "stdev": null
+        },
+        "decide": {
+          "count": 280,
+          "label": "decide",
+          "max": 0.031,
+          "mean": 0.0031,
+          "min": 0.002,
+          "p50": 0.003,
+          "p90": 0.004,
+          "p99": 0.008,
+          "stdev": 0.002
+        },
+        "enforce": {
+          "count": 0,
+          "label": "enforce",
+          "max": null,
+          "mean": null,
+          "min": null,
+          "p50": null,
+          "p90": null,
+          "p99": null,
+          "stdev": null
+        },
+        "modules": {
+          "count": 0,
+          "label": "modules",
+          "max": null,
+          "mean": null,
+          "min": null,
+          "p50": null,
+          "p90": null,
+          "p99": null,
+          "stdev": null
+        },
+        "parse": {
+          "count": 280,
+          "label": "parse",
+          "max": 0.054,
+          "mean": 0.0063,
+          "min": 0.004,
+          "p50": 0.005,
+          "p90": 0.009,
+          "p99": 0.016,
+          "stdev": 0.0038
+        },
+        "total": {
+          "count": 280,
+          "label": "total",
+          "max": 3.155,
+          "mean": 0.1852,
+          "min": 0.047,
+          "p50": 0.084,
+          "p90": 0.337,
+          "p99": 1.766,
+          "stdev": 0.3165
+        },
+        "upstream": {
+          "count": 280,
+          "label": "upstream",
+          "max": 1.728,
+          "mean": 0.0809,
+          "min": 0.026,
+          "p50": 0.04,
+          "p90": 0.12,
+          "p99": 1.109,
+          "stdev": 0.172
+        }
+      },
+      "queries_stored": 300,
+      "queries_with_upstream": 300,
+      "verdicts": {
+        "ALLOW": 300
+      }
+    },
+    {
+      "added": {
+        "count": 280,
+        "label": "added",
+        "max": 4.303,
+        "mean": 1.19,
+        "min": 0.429,
+        "p50": 1.09,
+        "p90": 1.882,
+        "p99": 4.108,
+        "stdev": 0.6888
+      },
+      "case": "all_modules_allow",
+      "mode": "B",
+      "phases": {
+        "aggregate": {
+          "count": 280,
+          "label": "aggregate",
+          "max": 0.191,
+          "mean": 0.0161,
+          "min": 0.012,
+          "p50": 0.014,
+          "p90": 0.018,
+          "p99": 0.05,
+          "stdev": 0.0117
+        },
+        "decide": {
+          "count": 280,
+          "label": "decide",
+          "max": 3.926,
+          "mean": 0.6479,
+          "min": 0.396,
+          "p50": 0.518,
+          "p90": 0.796,
+          "p99": 3.753,
+          "stdev": 0.4794
+        },
+        "enforce": {
+          "count": 0,
+          "label": "enforce",
+          "max": null,
+          "mean": null,
+          "min": null,
+          "p50": null,
+          "p90": null,
+          "p99": null,
+          "stdev": null
+        },
+        "modules": {
+          "count": 280,
+          "label": "modules",
+          "max": 3.879,
+          "mean": 0.6042,
+          "min": 0.36,
+          "p50": 0.473,
+          "p90": 0.736,
+          "p99": 3.707,
+          "stdev": 0.4781
+        },
+        "parse": {
+          "count": 280,
+          "label": "parse",
+          "max": 0.04,
+          "mean": 0.0074,
+          "min": 0.005,
+          "p50": 0.007,
+          "p90": 0.009,
+          "p99": 0.016,
+          "stdev": 0.0025
+        },
+        "total": {
+          "count": 280,
+          "label": "total",
+          "max": 4.384,
+          "mean": 1.3563,
+          "min": 0.494,
+          "p50": 1.208,
+          "p90": 2.168,
+          "p99": 4.166,
+          "stdev": 0.7331
+        },
+        "upstream": {
+          "count": 280,
+          "label": "upstream",
+          "max": 3.371,
+          "mean": 0.1663,
+          "min": 0.05,
+          "p50": 0.073,
+          "p90": 0.288,
+          "p99": 1.567,
+          "stdev": 0.294
+        }
+      },
+      "queries_stored": 300,
+      "queries_with_upstream": 300,
+      "verdicts": {
+        "ALLOW": 300
+      }
+    },
+    {
+      "added": {
+        "count": 280,
+        "label": "added",
+        "max": 9.459,
+        "mean": 1.0601,
+        "min": 0.063,
+        "p50": 0.278,
+        "p90": 3.041,
+        "p99": 7.573,
+        "stdev": 1.5198
+      },
+      "case": "enforced_block",
+      "mode": "B",
+      "phases": {
+        "aggregate": {
+          "count": 280,
+          "label": "aggregate",
+          "max": 0.041,
+          "mean": 0.0079,
+          "min": 0.005,
+          "p50": 0.007,
+          "p90": 0.011,
+          "p99": 0.027,
+          "stdev": 0.0038
+        },
+        "decide": {
+          "count": 280,
+          "label": "decide",
+          "max": 0.095,
+          "mean": 0.0402,
+          "min": 0.024,
+          "p50": 0.037,
+          "p90": 0.059,
+          "p99": 0.084,
+          "stdev": 0.0123
+        },
+        "enforce": {
+          "count": 280,
+          "label": "enforce",
+          "max": 0.062,
+          "mean": 0.0033,
+          "min": 0.002,
+          "p50": 0.002,
+          "p90": 0.004,
+          "p99": 0.029,
+          "stdev": 0.0054
+        },
+        "modules": {
+          "count": 280,
+          "label": "modules",
+          "max": 0.047,
+          "mean": 0.0121,
+          "min": 0.007,
+          "p50": 0.011,
+          "p90": 0.017,
+          "p99": 0.035,
+          "stdev": 0.0048
+        },
+        "parse": {
+          "count": 280,
+          "label": "parse",
+          "max": 0.11,
+          "mean": 0.0082,
+          "min": 0.004,
+          "p50": 0.007,
+          "p90": 0.011,
+          "p99": 0.038,
+          "stdev": 0.0078
+        },
+        "total": {
+          "count": 280,
+          "label": "total",
+          "max": 9.459,
+          "mean": 1.0601,
+          "min": 0.063,
+          "p50": 0.278,
+          "p90": 3.041,
+          "p99": 7.573,
+          "stdev": 1.5198
+        },
+        "upstream": {
+          "count": 0,
+          "label": "upstream",
+          "max": null,
+          "mean": null,
+          "min": null,
+          "p50": null,
+          "p90": null,
+          "p99": null,
+          "stdev": null
+        }
+      },
+      "queries_stored": 300,
+      "queries_with_upstream": 0,
+      "verdicts": {
+        "BLOCK": 300
+      }
+    },
+    {
+      "added": {
+        "count": 280,
+        "label": "added",
+        "max": 3.264,
+        "mean": 0.318,
+        "min": 0.076,
+        "p50": 0.191,
+        "p90": 0.659,
+        "p99": 2.386,
+        "stdev": 0.402
+      },
+      "case": "module_unavailable",
+      "mode": "B",
+      "phases": {
+        "aggregate": {
+          "count": 280,
+          "label": "aggregate",
+          "max": 3.109,
+          "mean": 0.0655,
+          "min": 0.022,
+          "p50": 0.032,
+          "p90": 0.077,
+          "p99": 0.887,
+          "stdev": 0.2327
+        },
+        "decide": {
+          "count": 280,
+          "label": "decide",
+          "max": 3.225,
+          "mean": 0.1678,
+          "min": 0.056,
+          "p50": 0.106,
+          "p90": 0.211,
+          "p99": 2.342,
+          "stdev": 0.3269
+        },
+        "enforce": {
+          "count": 0,
+          "label": "enforce",
+          "max": null,
+          "mean": null,
+          "min": null,
+          "p50": null,
+          "p90": null,
+          "p99": null,
+          "stdev": null
+        },
+        "modules": {
+          "count": 280,
+          "label": "modules",
+          "max": 2.445,
+          "mean": 0.0864,
+          "min": 0.023,
+          "p50": 0.053,
+          "p90": 0.127,
+          "p99": 2.009,
+          "stdev": 0.2251
+        },
+        "parse": {
+          "count": 280,
+          "label": "parse",
+          "max": 0.048,
+          "mean": 0.0061,
+          "min": 0.004,
+          "p50": 0.005,
+          "p90": 0.008,
+          "p99": 0.027,
+          "stdev": 0.0037
+        },
+        "total": {
+          "count": 280,
+          "label": "total",
+          "max": 3.371,
+          "mean": 0.381,
+          "min": 0.109,
+          "p50": 0.242,
+          "p90": 0.784,
+          "p99": 2.493,
+          "stdev": 0.4258
+        },
+        "upstream": {
+          "count": 280,
+          "label": "upstream",
+          "max": 1.734,
+          "mean": 0.063,
+          "min": 0.027,
+          "p50": 0.039,
+          "p90": 0.093,
+          "p99": 0.63,
+          "stdev": 0.1254
+        }
+      },
+      "queries_stored": 300,
+      "queries_with_upstream": 300,
+      "verdicts": {
+        "UNKNOWN": 300
+      }
+    }
+  ],
+  "processor": "x86_64",
+  "python": "3.12.3",
+  "queries_per_case": 300,
+  "repeats": 3,
+  "warmup_discarded": 20
+}

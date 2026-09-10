@@ -1,0 +1,5 @@
+mode,case,queries_stored,queries_with_upstream,total_count,total_min,total_p50,total_p90,total_p99,total_max,total_mean,total_stdev,added_count,added_min,added_p50,added_p90,added_p99,added_max,added_mean,added_stdev
+B,baseline_no_modules,300,300,280,0.047,0.084,0.337,1.766,3.155,0.1852,0.3165,280,0.021,0.034,0.218,1.512,3.088,0.1043,0.2662
+B,all_modules_allow,300,300,280,0.494,1.208,2.168,4.166,4.384,1.3563,0.7331,280,0.429,1.09,1.882,4.108,4.303,1.19,0.6888
+B,enforced_block,300,0,280,0.063,0.278,3.041,7.573,9.459,1.0601,1.5198,280,0.063,0.278,3.041,7.573,9.459,1.0601,1.5198
+B,module_unavailable,300,300,280,0.109,0.242,0.784,2.493,3.371,0.381,0.4258,280,0.076,0.191,0.659,2.386,3.264,0.318,0.402

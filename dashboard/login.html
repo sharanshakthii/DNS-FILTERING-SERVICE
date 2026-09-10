@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — PRJ_112 DNS filtering console</title>
+<!--
+  Stage 17 login page.
+
+  Plain HTML, CSS and fetch(), matching the console's design tokens. No
+  framework, no dependency, no external asset.
+
+  The password is sent in a POST body over same-origin fetch, never in a URL
+  or a query parameter, and the field is never written into the page. The
+  session arrives as an HttpOnly cookie, so nothing on this page can read it
+  afterwards — which is the point.
+
+  This page is a convenience, not the security boundary. Every protected
+  endpoint is enforced by FastAPI, so skipping this page gains nothing.
+-->
+<style>
+  :root {
+    --ground:   #0b1017;
+    --panel:    #121a24;
+    --hairline: #223040;
+    --hairline-bright: #31445c;
+    --ink:      #e6edf5;
+    --ink-soft: #8b9bb0;
+    --ink-dim:  #5f7085;
+    --block:    #e0645c;
+    --allow:    #4fb286;
+    --signal:   #4a9fd8;
+    --r: 4px;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(1000px 500px at 70% -10%, #16202c 0%, transparent 60%),
+      var(--ground);
+    color: var(--ink);
+    font: 14px/1.55 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+  .card {
+    width: min(380px, 92vw);
+    background: linear-gradient(180deg, var(--panel), #10171f);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r);
+    padding: 26px 24px 22px;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: rise 420ms var(--ease-out) 60ms forwards;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* The pipeline rail from the console, at rest. */
+  .rail { margin: 2px 0 20px; }
+  .rail svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .rail line { stroke: var(--hairline-bright); stroke-width: 1.5; }
+  .rail circle { fill: var(--ground); stroke: var(--hairline-bright);
+                 stroke-width: 1.5; }
+
+  h1 { font-size: 16px; font-weight: 600; margin: 0 0 4px;
+       letter-spacing: -0.01em; }
+  .sub { font-size: 12px; color: var(--ink-dim); margin: 0 0 20px; }
+
+  label { display: block; font-size: 12px; color: var(--ink-soft);
+          margin: 0 0 5px; }
+
+  input {
+    width: 100%;
+    font: 14px var(--mono);
+    color: var(--ink);
+    background: #0e161f;
+    border: 1px solid var(--hairline);
+    border-radius: var(--r);
+    padding: 9px 10px;
+    margin-bottom: 14px;
+    transition: border-color 120ms var(--ease);
+  }
+  input:hover, input:focus { border-color: var(--hairline-bright); }
+  input.invalid { border-color: var(--block); }
+
+  button {
+    width: 100%;
+    font: 600 14px var(--sans);
+    color: var(--ink);
+    background: #1b2836;
+    border: 1px solid var(--hairline-bright);
+    border-radius: var(--r);
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 120ms var(--ease), transform 80ms var(--ease);
+  }
+  button:hover:not([disabled]) { background: #223247; }
+  button:active:not([disabled]) { transform: scale(.99); }
+  button[disabled] { opacity: .55; cursor: default; }
+
+  .alert {
+    font-size: 12.5px;
+    color: #efa39d;
+    background: rgba(224,100,92,.09);
+    border-left: 2px solid var(--block);
+    border-radius: 0 var(--r) var(--r) 0;
+    padding: 8px 11px;
+    margin: 0 0 14px;
+  }
+
+  .info {
+    font-size: 12.5px;
+    color: #9fd4b8;
+    background: rgba(79,178,134,.08);
+    border-left: 2px solid var(--allow);
+    border-radius: 0 var(--r) var(--r) 0;
+    padding: 8px 11px;
+    margin: 0 0 14px;
+  }
+
+  .note {
+    font-size: 11.5px; color: var(--ink-dim);
+    border-left: 2px solid var(--hairline);
+    padding-left: 10px; margin: 18px 0 0;
+  }
+
+  .spinner {
+    display: inline-block; width: 12px; height: 12px;
+    margin-right: 7px; vertical-align: -1px;
+    border: 2px solid rgba(230,237,245,.25);
+    border-top-color: var(--ink);
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+    }
+    .card { opacity: 1; transform: none; }
+    .spinner { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<main class="card">
+  <div class="rail">
+    <svg viewBox="0 0 300 24" role="img" aria-label="DNS filtering pipeline">
+      <line x1="16" y1="12" x2="284" y2="12"></line>
+      <circle cx="16" cy="12" r="4"></circle>
+      <circle cx="83" cy="12" r="4"></circle>
+      <circle cx="150" cy="12" r="4"></circle>
+      <circle cx="217" cy="12" r="4"></circle>
+      <circle cx="284" cy="12" r="4"></circle>
+    </svg>
+  </div>
+
+  <h1>DNS filtering console</h1>
+  <p class="sub">Sign in to view stored decisions and their evidence.</p>
+
+  <div id="message" role="status" aria-live="polite"></div>
+
+  <label for="username">Username</label>
+  <input type="text" id="username" name="username" autocomplete="username"
+         autocapitalize="off" autocorrect="off" spellcheck="false" required>
+
+  <label for="password">Password</label>
+  <input type="password" id="password" name="password"
+         autocomplete="current-password" required>
+
+  <button id="submit" type="button">Sign in</button>
+
+  <p class="note">Academic / local-development authentication. There is no
+     HTTPS, no rate limiting and no account lockout. Do not expose this port.</p>
+</main>
+
+<script>
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+
+function esc(value) {
+  return String(value === undefined || value === null ? "" : value)
+    .replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+}
+
+function show(kind, text) {
+  $("message").innerHTML =
+    `<p class="${kind === "error" ? "alert" : "info"}">${esc(text)}</p>`;
+}
+
+function busy(on) {
+  const button = $("submit");
+  button.disabled = on;
+  button.innerHTML = on
+    ? '<span class="spinner"></span>Signing in…'
+    : "Sign in";
+}
+
+async function submit() {
+  const username = $("username").value.trim();
+  const password = $("password").value;
+
+  $("username").classList.remove("invalid");
+  $("password").classList.remove("invalid");
+
+  if (!username || !password) {
+    show("error", "Enter both a username and a password.");
+    return;
+  }
+
+  busy(true);
+  try {
+    const response = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // Same origin, so the session cookie the server sets is stored and
+      // sent automatically on every later request.
+      credentials: "same-origin",
+      body: JSON.stringify({ username, password })
+    });
+
+    if (response.ok) {
+      show("info", "Signed in. Opening the console…");
+      window.location.replace("/dashboard/");
+      return;
+    }
+
+    const body = await response.json().catch(() => ({}));
+    $("username").classList.add("invalid");
+    $("password").classList.add("invalid");
+    // The server returns one message for a wrong password and for an
+    // unknown user, so the page cannot leak which it was either.
+    show("error", body.detail || `Sign-in failed (${response.status}).`);
+  } catch (err) {
+    show("error", "Could not reach the server. Is it running?");
+  } finally {
+    // The password is never stored, echoed, or written into the page.
+    $("password").value = "";
+    busy(false);
+  }
+}
+
+$("submit").addEventListener("click", submit);
+for (const id of ["username", "password"]) {
+  $(id).addEventListener("keydown", (event) => {
+    if (event.key === "Enter") submit();
+  });
+}
+
+$("username").focus();
+</script>
+</body>
+</html>

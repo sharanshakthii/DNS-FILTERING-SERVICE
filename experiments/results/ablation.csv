@@ -1,0 +1,15 @@
+arm,family,modules,module_count,true_positive,false_positive,true_negative,false_negative,total,predicted_positive,accuracy,precision,recall,f1,false_positive_rate,false_negative_rate,note
+baseline_all,baseline,"ti,nrd,typosquat,dga,beaconing",5,14,0,240,466,720,14,0.3528,1.0,0.0292,0.0567,0.0,0.9708,"all five modules, project default weights and thresholds"
+only_ti,individual,ti,1,120,0,240,360,720,120,0.5,1.0,0.25,0.4,0.0,0.75,"scored against a feed the dataset declares, so precision is 1.0 by construction and measures nothing"
+only_nrd,individual,nrd,1,252,60,180,228,720,312,0.6,0.8077,0.525,0.6364,0.25,0.475,
+only_typosquat,individual,typosquat,1,119,0,240,361,720,119,0.4986,1.0,0.2479,0.3973,0.0,0.7521,
+only_dga,individual,dga,1,138,10,230,342,720,148,0.5111,0.9324,0.2875,0.4395,0.0417,0.7125,
+only_beaconing,individual,beaconing,1,120,126,114,360,720,246,0.325,0.4878,0.25,0.3306,0.525,0.75,
+without_ti,leave_one_out,"nrd,typosquat,dga,beaconing",4,233,0,240,247,720,233,0.6569,1.0,0.4854,0.6536,0.0,0.5146,delta against baseline_all is the meaningful figure
+without_nrd,leave_one_out,"ti,typosquat,dga,beaconing",4,120,0,240,360,720,120,0.5,1.0,0.25,0.4,0.0,0.75,delta against baseline_all is the meaningful figure
+without_typosquat,leave_one_out,"ti,nrd,dga,beaconing",4,120,0,240,360,720,120,0.5,1.0,0.25,0.4,0.0,0.75,delta against baseline_all is the meaningful figure
+without_dga,leave_one_out,"ti,nrd,typosquat,beaconing",4,120,0,240,360,720,120,0.5,1.0,0.25,0.4,0.0,0.75,delta against baseline_all is the meaningful figure
+without_beaconing,leave_one_out,"ti,nrd,typosquat,dga",4,14,0,240,466,720,14,0.3528,1.0,0.0292,0.0567,0.0,0.9708,delta against baseline_all is the meaningful figure
+ti_only,research_arm,ti,1,120,0,240,360,720,120,0.5,1.0,0.25,0.4,0.0,0.75,threat-intelligence-only arm of the research question
+ml_only,research_arm,dga,1,138,10,230,342,720,148,0.5111,0.9324,0.2875,0.4395,0.0417,0.7125,ML-only arm; the DGA classifier is the project's only ML module
+hybrid,research_arm,"ti,nrd,typosquat,dga,beaconing",5,14,0,240,466,720,14,0.3528,1.0,0.0292,0.0567,0.0,0.9708,hybrid arm; identical configuration to baseline_all

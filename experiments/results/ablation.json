@@ -1,0 +1,1030 @@
+[
+  {
+    "accuracy": 0.3528,
+    "arm": "baseline_all",
+    "f1": 0.0567,
+    "false_negative": 466,
+    "false_negative_rate": 0.9708,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "baseline",
+    "module_count": 5,
+    "module_status": {
+      "beaconing": {
+        "ok": 246,
+        "unavailable": 474
+      },
+      "dga": {
+        "ok": 720
+      },
+      "nrd": {
+        "ok": 720
+      },
+      "ti": {
+        "ok": 720
+      },
+      "typosquat": {
+        "ok": 720
+      }
+    },
+    "modules": "ti,nrd,typosquat,dga,beaconing",
+    "note": "all five modules, project default weights and thresholds",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.1,
+        "label": 1,
+        "predicted": 12,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0167,
+        "label": 1,
+        "predicted": 2,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 14,
+    "recall": 0.0292,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 14
+  },
+  {
+    "accuracy": 0.5,
+    "arm": "only_ti",
+    "f1": 0.4,
+    "false_negative": 360,
+    "false_negative_rate": 0.75,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "individual",
+    "module_count": 1,
+    "module_status": {
+      "ti": {
+        "ok": 720
+      }
+    },
+    "modules": "ti",
+    "note": "scored against a feed the dataset declares, so precision is 1.0 by construction and measures nothing",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 1.0,
+        "label": 1,
+        "predicted": 120,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 120,
+    "recall": 0.25,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 120
+  },
+  {
+    "accuracy": 0.6,
+    "arm": "only_nrd",
+    "f1": 0.6364,
+    "false_negative": 228,
+    "false_negative_rate": 0.475,
+    "false_positive": 60,
+    "false_positive_rate": 0.25,
+    "family": "individual",
+    "module_count": 1,
+    "module_status": {
+      "nrd": {
+        "ok": 720
+      }
+    },
+    "modules": "nrd",
+    "note": "",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.05,
+        "label": 1,
+        "predicted": 6,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 1.0,
+        "label": 0,
+        "predicted": 60,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 1.0,
+        "label": 1,
+        "predicted": 120,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.05,
+        "label": 1,
+        "predicted": 6,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 1.0,
+        "label": 1,
+        "predicted": 120,
+        "rows": 120
+      }
+    },
+    "precision": 0.8077,
+    "predicted_positive": 312,
+    "recall": 0.525,
+    "total": 720,
+    "true_negative": 180,
+    "true_positive": 252
+  },
+  {
+    "accuracy": 0.4986,
+    "arm": "only_typosquat",
+    "f1": 0.3973,
+    "false_negative": 361,
+    "false_negative_rate": 0.7521,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "individual",
+    "module_count": 1,
+    "module_status": {
+      "typosquat": {
+        "ok": 720
+      }
+    },
+    "modules": "typosquat",
+    "note": "",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.9917,
+        "label": 1,
+        "predicted": 119,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 119,
+    "recall": 0.2479,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 119
+  },
+  {
+    "accuracy": 0.5111,
+    "arm": "only_dga",
+    "f1": 0.4395,
+    "false_negative": 342,
+    "false_negative_rate": 0.7125,
+    "false_positive": 10,
+    "false_positive_rate": 0.0417,
+    "family": "individual",
+    "module_count": 1,
+    "module_status": {
+      "dga": {
+        "ok": 720
+      }
+    },
+    "modules": "dga",
+    "note": "",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0167,
+        "label": 1,
+        "predicted": 2,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0417,
+        "label": 0,
+        "predicted": 5,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0333,
+        "label": 0,
+        "predicted": 2,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.05,
+        "label": 0,
+        "predicted": 3,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.9667,
+        "label": 1,
+        "predicted": 116,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.0333,
+        "label": 1,
+        "predicted": 4,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.1333,
+        "label": 1,
+        "predicted": 16,
+        "rows": 120
+      }
+    },
+    "precision": 0.9324,
+    "predicted_positive": 148,
+    "recall": 0.2875,
+    "total": 720,
+    "true_negative": 230,
+    "true_positive": 138
+  },
+  {
+    "accuracy": 0.325,
+    "arm": "only_beaconing",
+    "f1": 0.3306,
+    "false_negative": 360,
+    "false_negative_rate": 0.75,
+    "false_positive": 126,
+    "false_positive_rate": 0.525,
+    "family": "individual",
+    "module_count": 1,
+    "module_status": {
+      "beaconing": {
+        "ok": 246,
+        "unavailable": 474
+      }
+    },
+    "modules": "beaconing",
+    "note": "",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 1.0,
+        "label": 1,
+        "predicted": 120,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.55,
+        "label": 0,
+        "predicted": 66,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 1.0,
+        "label": 0,
+        "predicted": 60,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      }
+    },
+    "precision": 0.4878,
+    "predicted_positive": 246,
+    "recall": 0.25,
+    "total": 720,
+    "true_negative": 114,
+    "true_positive": 120
+  },
+  {
+    "accuracy": 0.6569,
+    "arm": "without_ti",
+    "f1": 0.6536,
+    "false_negative": 247,
+    "false_negative_rate": 0.5146,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "leave_one_out",
+    "module_count": 4,
+    "module_status": {
+      "beaconing": {
+        "ok": 246,
+        "unavailable": 474
+      },
+      "dga": {
+        "ok": 720
+      },
+      "nrd": {
+        "ok": 720
+      },
+      "typosquat": {
+        "ok": 720
+      }
+    },
+    "modules": "nrd,typosquat,dga,beaconing",
+    "note": "delta against baseline_all is the meaningful figure",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.95,
+        "label": 1,
+        "predicted": 114,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.9917,
+        "label": 1,
+        "predicted": 119,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 233,
+    "recall": 0.4854,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 233
+  },
+  {
+    "accuracy": 0.5,
+    "arm": "without_nrd",
+    "f1": 0.4,
+    "false_negative": 360,
+    "false_negative_rate": 0.75,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "leave_one_out",
+    "module_count": 4,
+    "module_status": {
+      "beaconing": {
+        "ok": 246,
+        "unavailable": 474
+      },
+      "dga": {
+        "ok": 720
+      },
+      "ti": {
+        "ok": 720
+      },
+      "typosquat": {
+        "ok": 720
+      }
+    },
+    "modules": "ti,typosquat,dga,beaconing",
+    "note": "delta against baseline_all is the meaningful figure",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 1.0,
+        "label": 1,
+        "predicted": 120,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 120,
+    "recall": 0.25,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 120
+  },
+  {
+    "accuracy": 0.5,
+    "arm": "without_typosquat",
+    "f1": 0.4,
+    "false_negative": 360,
+    "false_negative_rate": 0.75,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "leave_one_out",
+    "module_count": 4,
+    "module_status": {
+      "beaconing": {
+        "ok": 246,
+        "unavailable": 474
+      },
+      "dga": {
+        "ok": 720
+      },
+      "nrd": {
+        "ok": 720
+      },
+      "ti": {
+        "ok": 720
+      }
+    },
+    "modules": "ti,nrd,dga,beaconing",
+    "note": "delta against baseline_all is the meaningful figure",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 1.0,
+        "label": 1,
+        "predicted": 120,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 120,
+    "recall": 0.25,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 120
+  },
+  {
+    "accuracy": 0.5,
+    "arm": "without_dga",
+    "f1": 0.4,
+    "false_negative": 360,
+    "false_negative_rate": 0.75,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "leave_one_out",
+    "module_count": 4,
+    "module_status": {
+      "beaconing": {
+        "ok": 246,
+        "unavailable": 474
+      },
+      "nrd": {
+        "ok": 720
+      },
+      "ti": {
+        "ok": 720
+      },
+      "typosquat": {
+        "ok": 720
+      }
+    },
+    "modules": "ti,nrd,typosquat,beaconing",
+    "note": "delta against baseline_all is the meaningful figure",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 1.0,
+        "label": 1,
+        "predicted": 120,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 120,
+    "recall": 0.25,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 120
+  },
+  {
+    "accuracy": 0.3528,
+    "arm": "without_beaconing",
+    "f1": 0.0567,
+    "false_negative": 466,
+    "false_negative_rate": 0.9708,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "leave_one_out",
+    "module_count": 4,
+    "module_status": {
+      "dga": {
+        "ok": 720
+      },
+      "nrd": {
+        "ok": 720
+      },
+      "ti": {
+        "ok": 720
+      },
+      "typosquat": {
+        "ok": 720
+      }
+    },
+    "modules": "ti,nrd,typosquat,dga",
+    "note": "delta against baseline_all is the meaningful figure",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.1,
+        "label": 1,
+        "predicted": 12,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0167,
+        "label": 1,
+        "predicted": 2,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 14,
+    "recall": 0.0292,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 14
+  },
+  {
+    "accuracy": 0.5,
+    "arm": "ti_only",
+    "f1": 0.4,
+    "false_negative": 360,
+    "false_negative_rate": 0.75,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "research_arm",
+    "module_count": 1,
+    "module_status": {
+      "ti": {
+        "ok": 720
+      }
+    },
+    "modules": "ti",
+    "note": "threat-intelligence-only arm of the research question",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 1.0,
+        "label": 1,
+        "predicted": 120,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 120,
+    "recall": 0.25,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 120
+  },
+  {
+    "accuracy": 0.5111,
+    "arm": "ml_only",
+    "f1": 0.4395,
+    "false_negative": 342,
+    "false_negative_rate": 0.7125,
+    "false_positive": 10,
+    "false_positive_rate": 0.0417,
+    "family": "research_arm",
+    "module_count": 1,
+    "module_status": {
+      "dga": {
+        "ok": 720
+      }
+    },
+    "modules": "dga",
+    "note": "ML-only arm; the DGA classifier is the project's only ML module",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0167,
+        "label": 1,
+        "predicted": 2,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0417,
+        "label": 0,
+        "predicted": 5,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0333,
+        "label": 0,
+        "predicted": 2,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.05,
+        "label": 0,
+        "predicted": 3,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.9667,
+        "label": 1,
+        "predicted": 116,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.0333,
+        "label": 1,
+        "predicted": 4,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.1333,
+        "label": 1,
+        "predicted": 16,
+        "rows": 120
+      }
+    },
+    "precision": 0.9324,
+    "predicted_positive": 148,
+    "recall": 0.2875,
+    "total": 720,
+    "true_negative": 230,
+    "true_positive": 138
+  },
+  {
+    "accuracy": 0.3528,
+    "arm": "hybrid",
+    "f1": 0.0567,
+    "false_negative": 466,
+    "false_negative_rate": 0.9708,
+    "false_positive": 0,
+    "false_positive_rate": 0.0,
+    "family": "research_arm",
+    "module_count": 5,
+    "module_status": {
+      "beaconing": {
+        "ok": 246,
+        "unavailable": 474
+      },
+      "dga": {
+        "ok": 720
+      },
+      "nrd": {
+        "ok": 720
+      },
+      "ti": {
+        "ok": 720
+      },
+      "typosquat": {
+        "ok": 720
+      }
+    },
+    "modules": "ti,nrd,typosquat,dga,beaconing",
+    "note": "hybrid arm; identical configuration to baseline_all",
+    "per_category": {
+      "beacon": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 120
+      },
+      "benign_new": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "benign_periodic": {
+        "detected_fraction": 0.0,
+        "label": 0,
+        "predicted": 0,
+        "rows": 60
+      },
+      "dga": {
+        "detected_fraction": 0.0,
+        "label": 1,
+        "predicted": 0,
+        "rows": 120
+      },
+      "listed": {
+        "detected_fraction": 0.1,
+        "label": 1,
+        "predicted": 12,
+        "rows": 120
+      },
+      "typosquat": {
+        "detected_fraction": 0.0167,
+        "label": 1,
+        "predicted": 2,
+        "rows": 120
+      }
+    },
+    "precision": 1.0,
+    "predicted_positive": 14,
+    "recall": 0.0292,
+    "total": 720,
+    "true_negative": 240,
+    "true_positive": 14
+  }
+]

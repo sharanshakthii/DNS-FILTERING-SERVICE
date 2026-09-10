@@ -1,0 +1,24 @@
+{
+  "ablation_arms": 14,
+  "caveat": "SYNTHETIC evaluation. The labels in datasets/eval_dev.csv come from the generator in tools/make_eval_dataset.py, not from observed ground truth, and the classes are far more separable than real DNS traffic. These figures show that the evaluation pipeline works and permit RELATIVE comparison between configurations. They are NOT detection accuracy and must not be reported as such. Threat intelligence in particular is scored against a feed the dataset itself declares, so its precision is 1.0 by construction and measures nothing.",
+  "dataset": {
+    "kind": "SYNTHETIC development fixture",
+    "label_0": 240,
+    "label_1": 480,
+    "path": "datasets/eval_dev.csv",
+    "rows": 720,
+    "sha256": "05687f27ee39e8b12f11a99dc36e44754599b975ef759b436bc29cc5d25f2202"
+  },
+  "fixed_now": 2000000000.0,
+  "generated_at": "2026-09-05T10:18:15.518096+00:00",
+  "model_artifact": "models/dga/dga_model.json",
+  "modules": [
+    "ti",
+    "nrd",
+    "typosquat",
+    "dga",
+    "beaconing"
+  ],
+  "project_defaults_unchanged": true,
+  "sweep_rows": 31
+}
