@@ -20,6 +20,8 @@ import json
 import sqlite3
 from pathlib import Path
 
+from .module_presentation import attach_states
+
 #: Verdicts the aggregator can produce. Used to validate a filter before it
 #: reaches the database, so an unknown value is a 422 rather than an empty
 #: result the caller might read as "no matching decisions".
@@ -187,13 +189,13 @@ class DecisionRepository:
             "qname": head["qname"],
             "verdict": head["verdict"],
             "score": head["aggregate_score"],
-            "modules": [{
+            "modules": attach_states([{
                 "module": r["module"],
                 "score": r["score"],
                 "status": r["status"],
                 "latency_ms": r["latency_ms"],
                 "features": _json_or_none(r["features_json"]) or {},
-            } for r in rows],
+            } for r in rows]),
             "explanation": _json_or_none(head["explanation_json"]),
         }
 

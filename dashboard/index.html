@@ -376,6 +376,18 @@
   /* A decision recorded as BLOCK but never acted on must read differently. */
   .badge.observed { border-style: dashed; }
 
+  /* Per-module presentation states (Investigation panel). Five distinct
+     reasons a module can show no risk finding, so none of them can be
+     mistaken for another. */
+  .badge.state-detected            { color: var(--signal); }
+  .badge.state-no-match            { color: var(--ink-soft); }
+  .badge.state-not-configured      { color: var(--flag); border-style: dashed; }
+  .badge.state-insufficient        { color: var(--flag); border-style: dotted; }
+  /* .badge.unavailable already covers "could not assess"; disabled and
+     skipped modules share its look — none of the three produced a score. */
+  .badge.state-active   { color: var(--allow); }
+  .badge.state-inactive { color: var(--ink-dim); border-style: dashed; }
+
   /* ===================================================================
      Weight track — the weighted mean, drawn to scale.
      =================================================================== */
@@ -774,6 +786,29 @@ function badge(verdict, extra) {
   return `<span class="badge ${verdictClass(verdict)} ${extra || ""}">${esc(verdict)}</span>`;
 }
 
+/* Per-module presentation states. The five states below (plus "disabled" and
+   "skipped") are what `api.module_presentation.classify` already computed
+   server-side from the module's real `status` and `features` — the page
+   only picks a label and a colour for a state it has been told, never
+   derives one of its own from a raw score. See api/module_presentation.py
+   for what each state means and which evidence produces it. */
+const MODULE_STATES = {
+  detected:                  { label: "DETECTED",                  cls: "state-detected" },
+  no_match:                  { label: "NO MATCH",                  cls: "state-no-match" },
+  not_configured:             { label: "NOT CONFIGURED",            cls: "state-not-configured" },
+  insufficient_observations:  { label: "INSUFFICIENT OBSERVATIONS", cls: "state-insufficient" },
+  unavailable:                { label: "UNAVAILABLE",               cls: "unavailable" },
+  disabled:                   { label: "DISABLED",                  cls: "unavailable" },
+  skipped:                    { label: "SKIPPED",                   cls: "unavailable" },
+};
+
+function moduleStateBadge(state) {
+  const meta = MODULE_STATES[state]
+    || { label: (state || "unknown").toUpperCase().replace(/_/g, " "),
+        cls: "unavailable" };
+  return `<span class="badge ${meta.cls}">${esc(meta.label)}</span>`;
+}
+
 /* A 401 anywhere means the session has ended — expired, or signed out in
    another tab. Sending the browser back to the login page is the honest
    response; continuing to poll would just produce errors. */
@@ -1115,6 +1150,40 @@ function featureList(features) {
   }).join("") + `</dl>`;
 }
 
+/* One row per module: name, presentation state, score when the state has
+   one, whether it counted toward the aggregate, and the reason when it did
+   not. Every field here is read straight from the evidence the API already
+   returns — api/module_presentation.py is the one place that turns a
+   module's real status and features into a state, so this never guesses at
+   one from the raw score. */
+function renderModuleEvidence(modules, explanation) {
+  if (!modules || !modules.length) {
+    return `<p class="note">No module evidence was stored for this decision.</p>`;
+  }
+  const contributions = new Map(
+    ((explanation && explanation.contributions) || []).map((c) => [c.module, c]));
+
+  return modules.map((m, i) => {
+    const contribution = contributions.get(m.module);
+    const contributed = contribution ? contribution.counted : m.contributed;
+    const reason = (m.features && (m.features.detail || m.features.reason)) || "";
+    return `
+      <div class="module reveal" style="animation-delay:${i * 60}ms">
+        <div class="module-head">
+          <span class="module-name">${esc(m.module)}</span>
+          ${moduleStateBadge(m.state)}
+        </div>
+        <div class="math">${m.status === "ok"
+          ? `score ${num(m.score, 2)}`
+          : `no score &mdash; ${esc(m.status)}`} &middot;
+          ${num(m.latency_ms, 3)} ms &middot;
+          ${contributed ? "counted toward the aggregate" : "excluded from the aggregate"}</div>
+        ${!contributed && reason ? `<p class="note">${esc(reason)}</p>` : ""}
+        ${featureList(m.features)}
+      </div>`;
+  }).join("");
+}
+
 function contributionTrace(explanation) {
   if (!explanation) {
     return `<p class="note">No aggregation trace was stored for this decision.
@@ -1189,19 +1258,7 @@ async function selectDecision(id) {
     const enforcement = explanation && explanation.enforcement;
     const applied = enforcement && enforcement.applied;
 
-    const modules = (evidence.modules || []).length
-      ? evidence.modules.map((m, i) => `
-          <div class="module reveal" style="animation-delay:${i * 60}ms">
-            <div class="module-head">
-              <span class="module-name">${esc(m.module)}</span>
-              <span class="math">${m.status === "ok"
-                ? `score ${num(m.score, 2)}`
-                : `no score &mdash; ${esc(m.status)}`} &middot;
-                ${num(m.latency_ms, 3)} ms</span>
-            </div>
-            ${featureList(m.features)}
-          </div>`).join("")
-      : `<p class="note">No module evidence was stored for this decision.</p>`;
+    const modules = renderModuleEvidence(evidence.modules, explanation);
 
     trace.classList.remove("leaving");
     trace.innerHTML = `
@@ -1265,6 +1322,8 @@ async function runLookup() {
       <div class="reveal" style="animation-delay:80ms">
         ${weightTrack(result.score, explanation)}</div>
       <fieldset class="reveal" style="animation-delay:160ms">
+        <legend>Signals</legend>${renderModuleEvidence(result.modules, explanation)}</fieldset>
+      <fieldset class="reveal" style="animation-delay:220ms">
         <legend>How the score was reached</legend>
         ${contributionTrace(explanation)}</fieldset>`;
     revealIn($("lookup-out"));
@@ -1283,11 +1342,17 @@ async function runLookup() {
 
 function renderMode(mode) {
   const live = (mode.modules || []).map((m) => m.name);
+  /* `mode.modules` is the running engine's own module list — not a guess,
+     not a roadmap. A module in it with enabled:true is genuinely scoring
+     every query this process evaluates, so it is labelled ACTIVE rather
+     than left to an unchecked-implies-off checkbox to communicate. */
   const modules = (mode.modules || []).map((m) => `
       <label style="display:flex; gap:7px; align-items:center; margin:3px 0">
         <input type="checkbox" data-module="${esc(m.name)}"
           ${m.enabled ? "checked" : ""}>
-        <span class="mono">${esc(m.name)}</span></label>`).join("");
+        <span class="mono">${esc(m.name)}</span>
+        <span class="badge ${m.enabled ? "state-active" : "state-inactive"}">
+          ${m.enabled ? "ACTIVE" : "DISABLED"}</span></label>`).join("");
 
   availableModules = mode.available_modules || [];
   const idle = availableModules.filter((name) => !live.includes(name));

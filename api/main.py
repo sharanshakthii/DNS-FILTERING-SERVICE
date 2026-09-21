@@ -44,6 +44,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from config.settings import Settings
 
 from . import auth
+from .module_presentation import attach_states
 from .repository import VALID_VERDICTS, DatabaseUnavailable, DecisionRepository
 
 log = logging.getLogger("api")
@@ -332,7 +333,7 @@ def lookup(payload: dict = Body(..., examples=[{"domain": "example.com"}])) -> d
         "verdict": decision["verdict"],
         "score": decision["score"],
         "enforcement": enforcement,
-        "modules": decision.get("evidence") or [],
+        "modules": attach_states(decision.get("evidence") or []),
         "explanation": explanation,
         "evaluation_ms": elapsed_ms,
         "note": note,

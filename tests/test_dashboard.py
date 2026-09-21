@@ -348,3 +348,53 @@ def test_an_unavailable_module_reads_differently_from_a_zero_score(source):
 
 def test_the_summary_is_escaped_like_every_other_api_value(source):
     assert "esc(explanation.summary)" in source
+
+
+# -- module presentation states --------------------------------------------
+#
+# The dashboard's problem was collapsing every module condition to a number:
+# "no match", "not configured" and "not enough history yet" all rendered as
+# a blank 0.00. These tests check that the six states a module's evidence
+# can actually be in are each named on the page, and that none of them is a
+# domain the page happens to have been tested against.
+
+def test_the_page_names_every_module_presentation_state(source):
+    for label in ["DETECTED", "NO MATCH", "NOT CONFIGURED",
+                  "INSUFFICIENT OBSERVATIONS", "UNAVAILABLE"]:
+        assert label in source, f"module state {label!r} is not shown"
+
+
+def test_module_state_comes_from_the_api_not_a_client_side_guess(source):
+    """The state must be read off `m.state`, which the API already computed
+    from the module's real status and features — never re-derived from the
+    score in JavaScript, which is exactly the bug being fixed."""
+    assert "moduleStateBadge(m.state)" in source
+    assert "MODULE_STATES" in source
+
+
+def test_the_investigation_panel_shows_whether_each_module_contributed(source):
+    assert "counted toward the aggregate" in source
+    assert "excluded from the aggregate" in source
+
+
+def test_a_domain_lookup_also_shows_per_module_signals(source):
+    """'Check a domain' is how an ad hoc name gets evaluated; it must show
+    the same per-module evidence as a stored decision, not just the total."""
+    assert source.count("renderModuleEvidence(") >= 2
+
+
+def test_the_configuration_panel_marks_enabled_modules_active(source):
+    """A module the engine is actually running must read as ACTIVE, not as
+    an unchecked box that looks the same as one that was never built."""
+    assert "state-active" in source
+    assert '"ACTIVE"' in source
+    assert 'm.enabled ? "state-active" : "state-inactive"' in source
+
+
+def test_the_page_contains_no_test_fixture_domains(source):
+    """These two domains are illustrative examples from the bug report, not
+    real detection results. Baking either into the page would fabricate a
+    finding no live evaluation produced."""
+    for domain in ["g00gle.com", "wappingerbicornshaps.com"]:
+        assert domain not in source.lower(), \
+            f"the dashboard hardcodes the example domain {domain!r}"

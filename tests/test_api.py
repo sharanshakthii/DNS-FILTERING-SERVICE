@@ -255,6 +255,21 @@ def test_evidence_returns_the_stored_decision_trace(client):
     assert body["explanation"]["contributions"][0]["weight"] == 1.0
 
 
+def test_evidence_distinguishes_a_checked_clean_result_from_unavailable(client):
+    """`clean.test` in the fixture is a real TI check that found nothing
+    (`listed: False`, score 0.0) — not a module that could not run."""
+    decision_id = client.get(
+        "/decisions?verdict=ALLOW").json()["decisions"][0]["id"]
+    body = client.get(f"/decisions/{decision_id}/evidence").json()
+
+    assert body["qname"] == "clean.test"
+    module = body["modules"][0]
+    assert module["status"] == "ok"
+    assert module["score"] == 0.0
+    assert module["state"] == "no_match"
+    assert module["contributed"] is True
+
+
 def test_evidence_for_a_missing_decision_is_404(client):
     response = client.get("/decisions/999999/evidence")
     assert response.status_code == 404
@@ -669,11 +684,14 @@ def test_lookup_returns_typosquat_evidence(tmp_path, monkeypatch):
     assert suspicious["modules"][0]["features"]["matched_brand"] == "spotify"
     assert suspicious["modules"][0]["features"]["suspicious_keyword"] == "apk"
     assert suspicious["score"] > 0
+    assert suspicious["modules"][0]["state"] == "detected"
 
     legitimate = api_client.post("/lookup",
                                  json={"domain": "spotify.com"}).json()
     assert legitimate["score"] == 0.0
     assert legitimate["modules"][0]["features"]["matched_brand"] is None
+    assert legitimate["modules"][0]["state"] == "no_match", \
+        "a checked-and-clear result must not read the same as unavailable"
 
 
 # -- Stage 13: DGA evidence through the API -------------------------------
@@ -702,10 +720,13 @@ def test_lookup_returns_dga_evidence(tmp_path, monkeypatch):
     assert module["features"]["verdict_hint"] == "DGA-like"
     assert module["score"] > 0.5
     assert module["features"]["top_contributions"]
+    assert module["state"] == "detected"
 
     ordinary = api_client.post("/lookup", json={"domain": "bluegarden.com"}).json()
     assert ordinary["modules"][0]["score"] < 0.5
     assert ordinary["modules"][0]["features"]["verdict_hint"] == "benign-like"
+    assert ordinary["modules"][0]["state"] == "no_match", \
+        "a near-zero benign DGA probability must not read as a detection"
 
 
 def test_lookup_reports_a_missing_dga_model_as_a_module_error(tmp_path,
@@ -721,6 +742,8 @@ def test_lookup_reports_a_missing_dga_model_as_a_module_error(tmp_path,
 
     assert body["modules"][0]["status"] == "unavailable"
     assert body["modules"][0]["features"]["unavailable"] == "ModelUnavailable"
+    assert body["modules"][0]["state"] == "not_configured", \
+        "a missing model artifact must not read as a generic failure or a zero score"
     assert body["verdict"] == "UNKNOWN", \
         "a module with no usable score was treated as a clean result"
 
@@ -776,4 +799,6 @@ def test_lookup_returns_beaconing_evidence_from_stored_history(tmp_path,
     assert thin["modules"][0]["status"] == "unavailable"
     assert thin["modules"][0]["features"]["unavailable"] == \
         "InsufficientObservations"
+    assert thin["modules"][0]["state"] == "insufficient_observations", \
+        "too few observations must not read as a clean zero"
     assert thin["verdict"] == "UNKNOWN"
