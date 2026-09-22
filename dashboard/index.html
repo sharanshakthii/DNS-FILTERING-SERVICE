@@ -24,26 +24,28 @@
 -->
 <style>
   :root {
-    /* Four surface levels carry depth; shadows are used sparingly. */
-    --ground:   #0b1017;
-    --panel:    #121a24;
-    --raised:   #18222f;
-    --hairline: #223040;
-    --hairline-bright: #31445c;
+    /* Four surface levels carry depth; shadows are used sparingly. A warm
+       graphite foundation — deliberately not the blue-black of a generic
+       "AI dashboard". */
+    --ground:   #17140f;
+    --panel:    #1e1a14;
+    --raised:   #26221b;
+    --hairline: #382f22;
+    --hairline-bright: #4d4230;
 
-    --ink:      #e6edf5;
-    --ink-soft: #8b9bb0;
-    --ink-dim:  #5f7085;
+    --ink:      #ece6d9;
+    --ink-soft: #b0a998;
+    --ink-dim:  #756e5c;
 
     /* Verdict hues encode state. Muted on purpose: no neon. */
-    --allow:   #4fb286;
-    --flag:    #d9a441;
-    --block:   #e0645c;
-    --unknown: #8f83b8;
+    --allow:   #82966a;   /* sage */
+    --flag:    #c79a47;   /* amber */
+    --block:   #ab5138;   /* rust */
+    --unknown: #96897a;   /* stone */
 
-    --signal:  #4a9fd8;   /* interactive affordances only */
+    --signal:  #c17a45;   /* burnt copper — interactive affordances only */
 
-    --r: 4px;
+    --r: 3px;
     --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
 
@@ -61,7 +63,7 @@
   body {
     margin: 0;
     background:
-      radial-gradient(1200px 600px at 70% -10%, #16202c 0%, transparent 60%),
+      radial-gradient(1200px 600px at 70% -10%, rgba(193,122,69,.05) 0%, transparent 60%),
       var(--ground);
     color: var(--ink);
     font: 14px/1.55 var(--sans);
@@ -74,7 +76,7 @@
     border-radius: 2px;
   }
 
-  .mono { font-family: var(--mono); }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .soft { color: var(--ink-soft); }
   .dim  { color: var(--ink-dim); }
 
@@ -164,7 +166,7 @@
   /* A stage lights while that part of the pipeline is being worked. */
   .rail .stage.lit .node {
     stroke: var(--signal);
-    fill: rgba(74, 159, 216, .22);
+    fill: rgba(193, 122, 69, .22);
   }
   .rail .stage.lit .label { fill: var(--ink); }
 
@@ -200,23 +202,48 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    background: linear-gradient(180deg, #101823 0%, rgba(16,24,35,.92) 100%);
+    background: linear-gradient(180deg, #1c1811 0%, rgba(24,20,15,.92) 100%);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--hairline);
-    padding: 12px 22px 10px;
+    padding: 14px 22px;
     display: grid;
-    grid-template-columns: auto minmax(220px, 460px) auto;
+    /* Equal outer tracks so the rail is genuinely centred in the header,
+       regardless of how wide the title or the controls happen to be. */
+    grid-template-columns: 1fr minmax(220px, 460px) 1fr;
     align-items: center;
     gap: 18px;
   }
+  /* A restrained accent line marks this as the console's own product,
+     without leaning on glow or gradient fills. */
+  header::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: linear-gradient(90deg, transparent,
+      var(--signal) 45%, var(--signal) 55%, transparent);
+    opacity: .3;
+  }
+
+  /* The DOM order is title, then the PRJ_112 line; reversing the visual
+     order gives PRJ_112 an eyebrow position above the title it names,
+     without touching the markup or anything that reads it. */
+  header > div:first-child {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 3px;
+  }
 
   header h1 {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 19px;
+    font-weight: 650;
     letter-spacing: -0.01em;
     margin: 0;
   }
-  header .sub { font-size: 11.5px; color: var(--ink-dim); }
+  header .sub {
+    font: 600 10px var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-dim);
+  }
 
   .pill {
     display: inline-flex;
@@ -236,20 +263,23 @@
     background: var(--ink-dim);
     transition: background-color 220ms var(--ease);
   }
-  .pill.ok   { color: var(--allow); border-color: rgba(79,178,134,.4); }
+  .pill.ok   { color: var(--allow); border-color: rgba(130,150,106,.4); }
   .pill.ok .dot   { background: var(--allow); }
-  .pill.warn { color: var(--flag); border-color: rgba(217,164,65,.4); }
+  .pill.warn { color: var(--flag); border-color: rgba(199,154,71,.4); }
   .pill.warn .dot { background: var(--flag); }
-  .pill.bad  { color: var(--block); border-color: rgba(224,100,92,.45); }
+  .pill.bad  { color: var(--block); border-color: rgba(171,81,56,.45); }
   .pill.bad .dot  { background: var(--block); }
 
+  /* A quiet technical footnote, not a warning banner: no colour fill, no
+     bright text — just a hairline and dim ink, the same register as any
+     other secondary caption on the page. */
   .honesty {
     margin: 0;
-    padding: 7px 22px;
-    font-size: 11.5px;
-    color: #c2a86a;
-    background: linear-gradient(180deg, rgba(217,164,65,.09), rgba(217,164,65,.03));
-    border-bottom: 1px solid rgba(217,164,65,.18);
+    padding: 5px 22px;
+    font-size: 10.5px;
+    color: var(--ink-dim);
+    background: transparent;
+    border-bottom: 1px solid var(--hairline);
   }
 
   main {
@@ -262,7 +292,7 @@
   }
 
   section {
-    background: linear-gradient(180deg, var(--panel), #10171f);
+    background: linear-gradient(180deg, var(--panel), #18140e);
     border: 1px solid var(--hairline);
     border-radius: var(--r);
     box-shadow: 0 1px 0 rgba(255,255,255,.02) inset;
@@ -278,7 +308,12 @@
     padding: 10px 14px;
     border-bottom: 1px solid var(--hairline);
   }
-  .head h2 { font-size: 13px; font-weight: 600; margin: 0; }
+  /* Section labels read as instrument labels, not article headings. */
+  .head h2 {
+    font-size: 11px; font-weight: 700; margin: 0;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--ink-soft);
+  }
   .head .meta { font-size: 11.5px; color: var(--ink-dim); }
 
   .body { padding: 14px; }
@@ -297,7 +332,7 @@
   input, select, button {
     font: inherit;
     color: var(--ink);
-    background: #0e161f;
+    background: #171209;
     border: 1px solid var(--hairline);
     border-radius: var(--r);
     padding: 6px 9px;
@@ -308,8 +343,8 @@
   input:hover, select:hover, button:hover { border-color: var(--hairline-bright); }
   input.invalid { border-color: var(--block); }
 
-  button { cursor: pointer; background: #16202c; }
-  button:hover { background: #1c2836; }
+  button { cursor: pointer; background: #211c15; }
+  button:hover { background: #2a2318; }
   button:active { transform: scale(.985); }
   button[disabled] { opacity: .45; cursor: default; transform: none; }
 
@@ -332,7 +367,7 @@
     align-items: center;
     gap: 10px;
     padding: 9px 14px 9px 0;
-    border-bottom: 1px solid rgba(34,48,64,.55);
+    border-bottom: 1px solid rgba(56,47,34,.55);
     cursor: pointer;
     transition: background-color var(--t-fast) var(--ease),
                 transform 80ms var(--ease);
@@ -372,7 +407,7 @@
   .badge.FLAG  { color: var(--flag); }
   .badge.BLOCK { color: var(--block); }
   .badge.UNKNOWN, .badge.SERVFAIL, .badge.FORMERR { color: var(--unknown); }
-  .badge.bloom { box-shadow: 0 0 0 3px rgba(224,100,92,.16); }
+  .badge.bloom { box-shadow: 0 0 0 3px rgba(171,81,56,.18); }
   /* A decision recorded as BLOCK but never acted on must read differently. */
   .badge.observed { border-style: dashed; }
 
@@ -400,7 +435,7 @@
     border: 1px solid var(--hairline-bright);
     border-radius: var(--r);
     overflow: hidden;
-    background: #0c141d;
+    background: #14100a;
   }
 
   .slot {
@@ -429,7 +464,7 @@
   }
   .slot.excluded {
     background-image: repeating-linear-gradient(
-      45deg, rgba(95,112,133,.22) 0 5px, transparent 5px 10px);
+      45deg, rgba(150,137,122,.22) 0 5px, transparent 5px 10px);
   }
   .slot.excluded .tag { color: var(--ink-dim); }
 
@@ -454,7 +489,10 @@
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
     margin-bottom: 8px;
   }
-  .score-line .value { font: 600 26px/1 var(--mono); letter-spacing: -0.02em; }
+  .score-line .value {
+    font: 600 26px/1 var(--mono); letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
   .score-line .of { font-size: 12px; color: var(--ink-dim); }
 
   /* Modules not implemented yet: no slot, no score, no fill. */
@@ -480,7 +518,7 @@
   .reveal { opacity: 0; transform: translateY(6px); }
   .reveal.in { animation: rise 280ms var(--ease-out) forwards; }
 
-  .module { padding: 10px 0; border-bottom: 1px solid rgba(34,48,64,.5); }
+  .module { padding: 10px 0; border-bottom: 1px solid rgba(56,47,34,.5); }
   .module:last-child { border-bottom: 0; }
 
   .module-head {
@@ -491,7 +529,7 @@
   .math { font: 11.5px var(--mono); color: var(--ink-soft); }
 
   .contrib {
-    height: 6px; background: #0c141d; border-radius: 3px;
+    height: 6px; background: #14100a; border-radius: 3px;
     overflow: hidden; margin-top: 7px;
   }
   .contrib > i {
@@ -523,7 +561,10 @@
     margin: 0 0 12px;
     background: rgba(255,255,255,.012);
   }
-  legend { font-size: 11.5px; color: var(--ink-dim); padding: 0 5px; }
+  legend {
+    font-size: 10.5px; font-weight: 600; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: .05em; padding: 0 5px;
+  }
 
   .kv { display: grid; grid-template-columns: max-content 1fr;
         gap: 4px 14px; font-size: 13px; margin: 0; }
@@ -534,7 +575,7 @@
     font-size: 13px;
     line-height: 1.5;
     color: var(--ink);
-    background: rgba(74, 159, 216, .07);
+    background: rgba(193, 122, 69, .08);
     border-left: 2px solid var(--signal);
     border-radius: 0 var(--r) var(--r) 0;
     padding: 9px 12px;
@@ -552,9 +593,9 @@
 
   .alert {
     margin: 0; padding: 10px 14px;
-    background: rgba(224,100,92,.09);
-    border-bottom: 1px solid rgba(224,100,92,.25);
-    color: #efa39d; font-size: 12.5px;
+    background: rgba(171,81,56,.10);
+    border-bottom: 1px solid rgba(171,81,56,.28);
+    color: #e3ab98; font-size: 12.5px;
   }
 
   .empty { padding: 40px 18px; text-align: center; color: var(--ink-soft); }
@@ -563,12 +604,15 @@
   .empty code {
     display: inline-block; margin-top: 10px;
     font: 12px var(--mono); color: var(--ink);
-    background: #0c141d; border: 1px solid var(--hairline);
+    background: #14100a; border: 1px solid var(--hairline);
     border-radius: 3px; padding: 4px 9px;
   }
 
-  .stats { display: flex; flex-wrap: wrap; gap: 20px 26px; padding: 12px 14px; }
-  .stat .n { font: 600 19px/1.15 var(--mono); letter-spacing: -0.02em; }
+  .stats { display: flex; flex-wrap: wrap; gap: 20px 26px; padding: 14px; }
+  .stat .n {
+    font: 600 19px/1.15 var(--mono); letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
   .stat .k { font-size: 11px; color: var(--ink-dim); }
   .stat .n.allow   { color: var(--allow); }
   .stat .n.flag    { color: var(--flag); }
@@ -639,7 +683,7 @@
 <!-- ===== Intro: the rail draws itself, then takes its post ============ -->
 <div id="intro" role="dialog" aria-label="Introduction">
   <div class="card">
-    <h1>DNS filtering console</h1>
+    <h1 align="center">DNS filtering console</h1>
     <p class="soft">Every query is scored by independent signals, combined into
        one risk decision, and recorded with the reasoning behind it.</p>
     <div class="rail" id="intro-rail"></div>
@@ -664,10 +708,8 @@
   </header>
 
   <p class="honesty">
-    Local development only &mdash; this page has no authentication and is not
-    production-ready. The counts below describe traffic this resolver happened
-    to see; they are not evaluation metrics, and detection
-    accuracy has not yet been measured.
+    Local development only &mdash; no authentication. These are internal debug signals,
+    not evaluation metrics: accuracy has not yet been measured against any labelled set.
   </p>
 
   <main>
@@ -865,9 +907,9 @@ function buildRail(host, width, height) {
       aria-label="Pipeline: ${STAGES.join(", ")}">
       <defs>
         <linearGradient id="sweepgrad" x1="0" x2="1">
-          <stop offset="0"  stop-color="#4a9fd8" stop-opacity="0"></stop>
-          <stop offset=".5" stop-color="#4a9fd8" stop-opacity=".5"></stop>
-          <stop offset="1"  stop-color="#4a9fd8" stop-opacity="0"></stop>
+          <stop offset="0"  stop-color="#c17a45" stop-opacity="0"></stop>
+          <stop offset=".5" stop-color="#c17a45" stop-opacity=".5"></stop>
+          <stop offset="1"  stop-color="#c17a45" stop-opacity="0"></stop>
         </linearGradient>
       </defs>
       <line class="track" x1="${pad}" y1="${y}" x2="${pad + span}" y2="${y}"></line>
