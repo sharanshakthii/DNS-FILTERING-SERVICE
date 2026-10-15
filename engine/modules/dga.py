@@ -36,7 +36,7 @@ from .base import (
     ModuleUnavailable,
     QueryContext,
 )
-from .dga_features import FEATURE_NAMES, extract_features
+from .dga_features import FEATURE_NAMES, extract_features, feature_set_for
 
 DEFAULT_MODEL_PATH = "models/dga/dga_model.json"
 SUPPORTED_ARTIFACT_VERSION = 1
@@ -70,11 +70,12 @@ class DGAModel:
 
         # A reordered or renamed feature list would silently produce confident
         # nonsense, so it is a hard error rather than a warning.
-        if self.feature_names != FEATURE_NAMES:
+        self.feature_set = feature_set_for(self.feature_names)
+        if self.feature_set is None:
             raise ModelUnavailable(
                 f"artifact features {list(self.feature_names)} do not match "
-                f"this build's {list(FEATURE_NAMES)}; retrain with "
-                f"tools/train_dga.py")
+                f"this build's {list(FEATURE_NAMES)} or any other known "
+                f"feature set; retrain with tools/train_dga.py")
 
         try:
             self.coefficients = [float(v) for v in artifact["coefficients"]]
@@ -85,7 +86,7 @@ class DGAModel:
             raise ModelUnavailable(f"artifact is malformed: {exc}") from exc
 
         widths = {len(self.coefficients), len(self.mean), len(self.scale),
-                  len(FEATURE_NAMES)}
+                  len(self.feature_names)}
         if len(widths) != 1:
             raise ModelUnavailable(
                 f"artifact vectors disagree in length: {sorted(widths)}")
@@ -116,7 +117,7 @@ class DGAModel:
         scikit-learn produced during training.
         """
         z = self.intercept
-        for i, name in enumerate(FEATURE_NAMES):
+        for i, name in enumerate(self.feature_names):
             z += ((features[name] - self.mean[i]) / self.scale[i]) \
                 * self.coefficients[i]
         # Guard the exponential against overflow on extreme inputs; the
@@ -134,7 +135,7 @@ class DGAModel:
         nothing about an individual decision.
         """
         terms = []
-        for i, name in enumerate(FEATURE_NAMES):
+        for i, name in enumerate(self.feature_names):
             standardised = (features[name] - self.mean[i]) / self.scale[i]
             terms.append({
                 "feature": name,
@@ -191,7 +192,7 @@ class DGAModule(DetectionModule):
     def evaluate(self, ctx: QueryContext) -> ModuleScore:
         model = self.model          # raises ModelUnavailable if absent
 
-        features = extract_features(ctx.qname)
+        features = extract_features(ctx.qname, model.feature_set)
         label, _count = (ctx.qname or "").strip().lower().rstrip("."), None
 
         if features["length"] == 0.0:
@@ -215,7 +216,8 @@ class DGAModule(DetectionModule):
             "threshold": self.threshold,
             "verdict_hint": ("DGA-like" if score >= self.threshold
                              else "benign-like"),
-            "feature_names": list(FEATURE_NAMES),
+            "feature_names": list(model.feature_names),
+            "feature_set": model.feature_set,
             "feature_values": {name: round(value, 4)
                                for name, value in features.items()},
             "top_contributions": model.top_contributions(features),

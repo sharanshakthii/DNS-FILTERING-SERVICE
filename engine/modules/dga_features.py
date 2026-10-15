@@ -60,6 +60,30 @@ FEATURE_NAMES = (
 )
 
 
+#: Feature set v2. Two changes from v1, each fixing a measured defect:
+#:
+#: 1. `label_count` is dropped. Subdomain depth is chosen by a zone or a
+#:    hosting platform, not by a generator producing a label. In v1 it was
+#:    also an artefact: every three-label training row was `<x>.co.uk`, so
+#:    the model learned label_count as a proxy and fired on every name with
+#:    a subdomain (`mail.google.com` scored 0.83).
+#: 2. The label is located with the Public Suffix List (site view), so
+#:    `x.co.uk` analyses `x` rather than `co`, and `x.pages.dev` analyses
+#:    the customer's `x` rather than `pages`.
+FEATURE_NAMES_V2 = tuple(n for n in FEATURE_NAMES if n != "label_count")
+
+#: Artifacts record their feature list; the set is chosen by matching it.
+FEATURE_SETS = {"v1": FEATURE_NAMES, "v2": FEATURE_NAMES_V2}
+
+
+def feature_set_for(names) -> str | None:
+    names = tuple(names)
+    for key, expected in FEATURE_SETS.items():
+        if names == expected:
+            return key
+    return None
+
+
 def registrable_label(qname: str) -> tuple[str, int]:
     """Return (label to analyse, number of labels in the name).
 
@@ -101,24 +125,36 @@ def longest_run(text: str, members: frozenset) -> int:
     return best
 
 
-def extract_features(qname: str) -> dict[str, float]:
+def extract_features(qname: str, feature_set: str = "v1") -> dict[str, float]:
     """Feature dictionary for one domain name.
+
+    `feature_set` "v1" (the default) is the published model's extraction,
+    unchanged; "v2" is described at FEATURE_NAMES_V2.
 
     Never raises. A malformed or empty name yields an all-zero vector rather
     than an exception, because this runs on the DNS query path and a crash
     there is an outage. The module records that the name was unusable.
     """
-    label, label_count = registrable_label(qname)
+    if feature_set == "v2":
+        from feeds.psl import registrable_label as psl_label
+        label = psl_label(qname, private=True)
+        label_count = 0
+        names = FEATURE_NAMES_V2
+    elif feature_set == "v1":
+        label, label_count = registrable_label(qname)
+        names = FEATURE_NAMES
+    else:
+        raise ValueError(f"unknown feature set {feature_set!r}")
     length = len(label)
 
     if length == 0:
-        return {name: 0.0 for name in FEATURE_NAMES}
+        return {name: 0.0 for name in names}
 
     digits = sum(1 for ch in label if ch in DIGITS)
     vowels = sum(1 for ch in label if ch in VOWELS)
     consonants = sum(1 for ch in label if ch in CONSONANTS)
 
-    return {
+    features = {
         "length": float(length),
         "digit_ratio": digits / length,
         "vowel_ratio": vowels / length,
@@ -130,9 +166,12 @@ def extract_features(qname: str) -> dict[str, float]:
         "hyphen_count": float(label.count("-")),
         "label_count": float(label_count),
     }
+    if feature_set == "v2":
+        del features["label_count"]
+    return features
 
 
-def feature_vector(qname: str) -> list[float]:
-    """Features as an ordered list matching FEATURE_NAMES."""
-    features = extract_features(qname)
-    return [features[name] for name in FEATURE_NAMES]
+def feature_vector(qname: str, feature_set: str = "v1") -> list[float]:
+    """Features as an ordered list matching the set's names."""
+    features = extract_features(qname, feature_set)
+    return [features[name] for name in FEATURE_SETS[feature_set]]

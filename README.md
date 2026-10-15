@@ -1246,6 +1246,36 @@ What the numbers say:
 Labels are feed listings and Tranco ranks — real domains, asserted labels,
 not verified ground truth.
 
+### DGA model v2
+
+**Cause of the artefact.** In `tools/make_dga_dataset.py` the TLD list
+includes `co.uk`, so every three-label training row (157 of 1,200) was
+`<x>.co.uk`, and `registrable_label` analysed the label `co` for all of
+them. Those rows were lexically identical whatever their class, and the only
+feature separating them was `label_count` — so logistic regression gave it
+the largest weight, which then extrapolated to every real subdomain.
+
+**v2** (`models/dga/dga_model_v2.json`) changes only the features: no
+`label_count`, and the label located with the PSL (site view). Same
+dataset, seed, split and model. A retrain of v1 with the current
+scikit-learn reproduced the published metrics exactly and its coefficients
+to 4e-14, so the difference is the features alone. Acceptance criteria were
+fixed before training:
+
+| criterion | v1 | v2 |
+|---|---|---|
+| C1 score independent of subdomain depth | no (`google.com` 0.002 → `a.b.google.com` 0.9999) | yes |
+| C2 synthetic held-out F1 ≥ 0.90 | 0.9408 | **0.9728** |
+| C3 real benign FPR, 3+ labels vs 2 labels | 100% vs 8.5% | **9.8% vs 7.1%** |
+| C3 real benign FPR overall (DGA only) | 0.178 | **0.074** |
+
+On the real phishing set v2 fires on 25.0% (v1: 70.8%, nearly all of it the
+artefact). Phishing domains are not algorithmically generated, so that is
+not a DGA metric; a real DGA corpus is still needed to measure recall.
+
+v1 is the default and the published model; paper mode pins it explicitly,
+live mode uses v2. Results: `experiments/results/real_eval_dga_v2.json`.
+
 ## Layout
 
 ```

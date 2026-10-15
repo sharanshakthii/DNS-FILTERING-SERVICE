@@ -57,6 +57,8 @@ def main() -> int:
     parser.add_argument("--psl-mode", default="off",
                         choices=["off", "icann", "full"],
                         help="off reproduces the published results file")
+    parser.add_argument("--tag", default="",
+                        help="suffix for the output files, e.g. dga_v2")
     args = parser.parse_args()
 
     # A row with no RDAP date is UNKNOWN in the rdap-only arm by design; the
@@ -95,8 +97,10 @@ def main() -> int:
     result = evaluate(rows, rdap, meta, brands=brands, official=official,
                       dga_model_path=args.model, psl_mode=args.psl_mode)
     suffix = "" if args.psl_mode == "off" else f"_psl_{args.psl_mode}"
+    if args.tag:
+        suffix += f"_{args.tag}"
 
-    report = {"dataset": path.name, "collected_at": meta["collected_at"],
+    report = {"dataset": path.name, "dga_model": Path(args.model).name, "collected_at": meta["collected_at"],
               "files": meta["files"], "tranco": meta["tranco"],
               "brands": brands, "official_domains": official,
               "aggregator": "RiskAggregator() shipped defaults: weighted mean, "

@@ -39,7 +39,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from engine.modules.dga_features import FEATURE_NAMES, feature_vector  # noqa: E402
+from engine.modules.dga_features import FEATURE_SETS, feature_vector  # noqa: E402
 
 SEED = 20260904
 TEST_SIZE = 0.25
@@ -88,6 +88,12 @@ def main() -> int:
                         default=str(REPO_ROOT / "models" / "dga"))
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--test-size", type=float, default=TEST_SIZE)
+    parser.add_argument("--feature-set", choices=sorted(FEATURE_SETS),
+                        default="v1",
+                        help="v1 reproduces the published model; v2 drops "
+                             "label_count and locates the label with the PSL")
+    parser.add_argument("--name", default="dga_model",
+                        help="artifact file stem, e.g. dga_model_v2")
     args = parser.parse_args()
 
     try:
@@ -112,7 +118,10 @@ def main() -> int:
     print(f"dataset : {dataset_path} ({len(domains)} rows, "
           f"{labels.count(0)} benign / {labels.count(1)} DGA-like)")
 
-    X = np.array([feature_vector(d) for d in domains], dtype=float)
+    FEATURE_NAMES = FEATURE_SETS[args.feature_set]
+    print(f"features: {args.feature_set} ({len(FEATURE_NAMES)})")
+    X = np.array([feature_vector(d, args.feature_set) for d in domains],
+                 dtype=float)
     y = np.array(labels, dtype=int)
 
     # Stratified so both classes appear in both halves; seeded so the split
@@ -189,8 +198,8 @@ def main() -> int:
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    model_path = out_dir / "dga_model.json"
-    meta_path = out_dir / "dga_model.meta.json"
+    model_path = out_dir / f"{args.name}.json"
+    meta_path = out_dir / f"{args.name}.meta.json"
 
     model_path.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n",
                           encoding="utf-8")
@@ -201,6 +210,7 @@ def main() -> int:
         "library": f"scikit-learn {sklearn.__version__}",
         "trained_at": datetime.now(timezone.utc).isoformat(),
         "random_seed": args.seed,
+        "feature_set": args.feature_set,
         "feature_names": list(FEATURE_NAMES),
         "dataset": {
             "path": str(dataset_path.relative_to(REPO_ROOT)),

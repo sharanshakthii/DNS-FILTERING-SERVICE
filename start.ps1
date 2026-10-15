@@ -83,6 +83,7 @@ if ($Mode -eq "paper") {
     $env:DNSF_FEED_AUTH_KEY         = ""      # local file; no key involved
     $env:DNSF_AGGREGATOR_TI_DECISIVE = "false" # formula (2) exactly
     $env:DNSF_PSL_MODE              = "off"   # last-two-labels, as published
+    $env:DNSF_DGA_MODEL_PATH        = "models/dga/dga_model.json"     # v1, as published
 } else {
     $env:DNSF_ENGINE_MODULES        = "ti,nrd,typosquat,dga,beaconing,rdap"
     $env:DNSF_FEED_NAME             = "phishing-domains"
@@ -91,6 +92,7 @@ if ($Mode -eq "paper") {
     $env:DNSF_FEED_URL              = ""
     $env:DNSF_AGGREGATOR_TI_DECISIVE = "true"
     $env:DNSF_PSL_MODE              = "full"  # Public Suffix List, incl. platforms
+    $env:DNSF_DGA_MODEL_PATH        = "models/dga/dga_model_v2.json"  # no label_count
     $env:DNSF_FEED_EXTRA_DEFAULTS   = "true"
     # A URLhaus key without its per-account export URL makes the feed layer
     # refuse to start (feeds/sources.py build_urlhaus_source). Live mode uses
