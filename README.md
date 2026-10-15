@@ -1084,7 +1084,7 @@ explicitly pinned configurations:
 | | paper | live |
 |---|---|---|
 | Modules | ti, nrd, typosquat, dga, beaconing | the same, plus `rdap` |
-| Threat intelligence | pinned `data/urlhaus.csv` snapshot | five live no-auth feeds, hourly |
+| Threat intelligence | pinned `datasets/urlhaus_20260921.csv` snapshot | five live no-auth feeds, hourly |
 | Aggregation | weighted mean, formula (2) | weighted mean, a TI listing decisive |
 | Purpose | every number in the paper | demonstration and real use |
 

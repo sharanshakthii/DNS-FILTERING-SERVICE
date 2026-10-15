@@ -40,7 +40,7 @@
          feed listing is decisive (score 1.0); registration age via RDAP.
          For demonstrations and real use.
   paper  The configuration the IEEE paper's results were produced with:
-         the pinned data/urlhaus.csv snapshot, the plain weighted mean of
+         the pinned datasets/urlhaus_20260921.csv snapshot, the plain weighted mean of
          formula (2), and the five original modules. Use this to reproduce
          or show anything the paper reports.
 #>
@@ -71,7 +71,9 @@ $env:DNSF_TYPOSQUAT_BRANDS   = "google,paypal,microsoft,apple,amazon,facebook,in
 # verdict came from. Same domain, two databases, two verdicts, no warning --
 # that is the failure this block exists to prevent.
 if ($Mode -eq "paper") {
-    $snapshot = Join-Path $ProjectRoot "data\urlhaus.csv"
+    # Tracked copy of the paper's snapshot (sha256 in its .meta.json); the
+    # original data/urlhaus.csv is excluded by .gitignore.
+    $snapshot = Join-Path $ProjectRoot "datasets\urlhaus_20260921.csv"
     if (-not (Test-Path $snapshot)) {
         throw "Paper mode needs the pinned snapshot at $snapshot"
     }

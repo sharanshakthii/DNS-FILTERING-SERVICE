@@ -1,0 +1,7 @@
+{
+  "file": "urlhaus_20260921.csv",
+  "sha256": "0c6bffcea19f3069335ede869ef7482d2d426aca5797408eec0f7f91d915daa5",
+  "source": "abuse.ch URLhaus CSV export (recent URLs), header 'Last updated: 2026-09-21 17:37:23 (UTC)'",
+  "used_by": "start.ps1 -Mode paper; every threat-intelligence result in the IEEE paper",
+  "note": "Previously only at data/urlhaus.csv, which .gitignore excludes. Tracked here so paper mode is reproducible from the repository alone."
+}
