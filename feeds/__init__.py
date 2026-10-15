@@ -12,6 +12,7 @@ from .first_seen import FirstSeenStore
 from .manager import FeedManager
 from .sources import (
     DEFAULT_FEED_URL,
+    EXTRA_DEFAULT_FEEDS,
     HttpFeedSource,
     LocalFileSource,
     build_urlhaus_source,
@@ -72,6 +73,16 @@ def build_manager_from_settings(manager_settings) -> FeedManager:
             fmt=manager_settings.feed_format,
         )
 
+    sources = [source]
+    # Unconfigured network use gets several independent feeds, because one
+    # list rarely contains a given malicious domain. An explicit URL, file or
+    # key means the operator chose a feed, so nothing is added to it.
+    if (not manager_settings.feed_file and not manager_settings.feed_auth_key
+            and not manager_settings.feed_url
+            and manager_settings.feed_extra_defaults):
+        sources += [HttpFeedSource(name=n, url=u, fmt=f)
+                    for n, u, f in EXTRA_DEFAULT_FEEDS]
+
     on_snapshot = None
     if manager_settings.db_enabled and manager_settings.db_path:
         try:
@@ -82,7 +93,7 @@ def build_manager_from_settings(manager_settings) -> FeedManager:
             logging.getLogger("feeds").exception(
                 "could not open the database for feed_state; continuing")
 
-    return FeedManager(sources=[source], cache=cache,
+    return FeedManager(sources=sources, cache=cache,
                        interval_s=manager_settings.feed_refresh_s,
                        on_snapshot=on_snapshot)
 

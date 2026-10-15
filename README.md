@@ -138,6 +138,14 @@ Configuration is by environment variable:
 | `DNSF_BLOCK_SINKHOLE_IPV4` | `0.0.0.0` | Address returned in sinkhole mode |
 | `DNSF_BLOCK_SINKHOLE_IPV6` | `::` | AAAA address returned in sinkhole mode |
 | `DNSF_BLOCK_TTL` | `60` | TTL on a synthesised sinkhole answer |
+| `DNSF_FEED_EXTRA_DEFAULTS` | `true` | With no feed configured, also load four more no-auth feeds |
+| `DNSF_AGGREGATOR_TI_DECISIVE` | `true` | A TI listing sets the score to 1.0; `false` is formula (2) exactly |
+| `DNSF_RDAP_BASE_URL` | `https://rdap.org/domain/` | RDAP service for registration age |
+| `DNSF_RDAP_NEW_WITHIN_S` | `2592000` | Registered within 30 days scores 1.0 |
+| `DNSF_RDAP_ESTABLISHED_AFTER_S` | `31536000` | Registered over a year ago scores 0.0 |
+| `DNSF_RDAP_TIMEOUT_S` | `6.0` | Per-lookup timeout (background, never on the query path) |
+| `DNSF_ALLOWLIST` | *(empty)* | Comma-separated domains always allowed, with subdomains |
+| `DNSF_ALLOWLIST_FILE` | *(unset)* | Same, one domain per line, `#` comments allowed |
 
 ## Verify
 
@@ -165,7 +173,8 @@ retrofitted later.
 python -m pytest tests/ -q
 ```
 
-Expected: **885 passed**.
+Expected: **976 passed, 2 skipped** (the paper's 938, plus 29 in
+`test_improvements.py` and 9 in `test_real_eval.py`).
 
 | File | Tests | Covers |
 |---|---|---|
@@ -191,6 +200,8 @@ Expected: **885 passed**.
 | `test_experiments.py` | 53 | Metrics, harness, ablation, sweeps, artifacts |
 | `test_auth.py` | 57 | Hashing, sessions, backend enforcement, logout |
 | `test_latency.py` | 26 | Percentiles, warm-up, phase collection, runner shape |
+| `test_improvements.py` | 29 | RDAP age, allowlist, device alerts, extra feeds, decisive TI |
+| `test_real_eval.py` | 9 | Real-data evaluator, checksum refusal, collection-time ages |
 
 No internet access required — a stub upstream runs on loopback.
 
@@ -1055,6 +1066,133 @@ upstream time is unnaturally small and stable. That is deliberate — it stops
 internet variance swamping the added latency — but it means the total is not
 a realistic end-user figure. **The portable results are the comparisons: the
 per-module ranking, and added latency relative to a resolution.**
+
+## Live mode and paper mode
+
+`start.ps1` launches the proxy and the API in two windows, in one of two
+explicitly pinned configurations:
+
+```powershell
+& "E:\prj112 (26)\prj112\start.ps1"              # live (default)
+& "E:\prj112 (26)\prj112\start.ps1" -Mode paper  # reproduces the paper
+```
+
+| | paper | live |
+|---|---|---|
+| Modules | ti, nrd, typosquat, dga, beaconing | the same, plus `rdap` |
+| Threat intelligence | pinned `data/urlhaus.csv` snapshot | five live no-auth feeds, hourly |
+| Aggregation | weighted mean, formula (2) | weighted mean, a TI listing decisive |
+| Purpose | every number in the paper | demonstration and real use |
+
+**Every result in the paper was produced in paper mode, and the experiment
+harness is unaffected by live mode**: `experiments/` constructs its own
+`RiskAggregator()`, whose default is the plain weighted mean. Re-running the
+ablation after these changes reproduced all 14 arms exactly.
+
+### Several live feeds
+
+One list rarely contains a given malicious domain. With no feed configured,
+TI loads Phishing.Database plus four more no-auth feeds: the
+malware-filter mirrors of URLhaus and of its phishing list, Phishing Army,
+and OpenPhish (about 580,000 indicators in total). Configuring
+`DNSF_FEED_URL`, `DNSF_FEED_FILE` or `DNSF_FEED_AUTH_KEY` means the operator
+chose a feed, and nothing is added to it.
+
+### A listing is decisive
+
+Stage 16 found that a single confident signal is diluted below the flag
+threshold once quiet modules also run. For threat intelligence that is the
+wrong outcome: a listing is a third party's explicit assertion, not a hint.
+With `DNSF_AGGREGATOR_TI_DECISIVE=true` a TI score of 1.0 sets the aggregate
+to 1.0, and the explanation records `decisive_hit` so the override is never
+silent. The heuristic modules are still averaged exactly as before.
+
+### Registration age (`rdap`)
+
+Closes the gap the `nrd` module states about itself: it measures observation
+age, and refuses to judge for its first seven days. RDAP (RFC 9082/9083) is
+the registries' free, no-account successor to WHOIS and returns the real
+registration date; the evidence carries `age_source: "rdap"`.
+
+- **Never on the query path.** The first query for a domain starts a
+  background lookup and reports `RegistrationPending` (unavailable, excluded,
+  never 0.0). Later queries read the cache: seven days for an answer, one
+  hour for a failure.
+- **Privacy.** A lookup discloses the registrable domain (not the hostname,
+  nothing about the client) to the RDAP service. Internal names (`.local`,
+  `.lan`, `.home`, `.test`, …) and IP literals are never sent.
+- A recent registration is a risk signal, not proof: new legitimate sites
+  exist. `rdap` takes the 0.5 unlisted-module weight.
+
+### Allowlist
+
+`DNSF_ALLOWLIST` / `DNSF_ALLOWLIST_FILE` name domains that are always ALLOW
+and never enforced — the override for a false positive such as a shared
+hosting platform. Modules still run and their evidence is stored; the
+explanation records the entry and the verdict the detectors would have
+given. Empty by default, which leaves the engine unchanged.
+
+### Devices needing attention (`GET /alerts`)
+
+Lists pseudonymised clients that reached at least `min_domains` (default 3)
+distinct BLOCK or FLAG domains within `window_s` (default one hour) — the
+pattern of an infected machine or unwanted software rather than one stray
+click. Session required; computed from stored decisions, nothing new
+collected; raw addresses never appear. Behind NAT one client hash can be
+many devices, and an alert is a reason to inspect a device, not proof.
+
+## Real-world evaluation
+
+```bash
+python tools/make_real_dataset.py   # collect once; needs the network
+python tools/run_real_eval.py       # replay offline; writes experiments/results/real_eval.*
+```
+
+Collected 2026-10-15 into `datasets/real_20261015.*` (seed 20261015):
+500 malicious domains, 100 from each live feed, and 500 benign from Tranco
+list N26XW (250 from ranks 1–10k, 250 from 10k–100k), with an RDAP
+registration date frozen for every registrable domain. The runner refuses
+to evaluate files whose checksums differ from the metadata.
+
+**TI is off in every arm**: the malicious rows came from the feeds, so TI
+would catch all of them by construction. TI is measured only where it is not
+circular — its false-positive rate on Tranco — which was **0 / 500**.
+`nrd` and `beaconing` need query history and timing, so they are not
+evaluated. Shipped defaults throughout; nothing fitted.
+
+| arm (TI off) | precision | recall | F1 | FPR |
+|---|---|---|---|---|
+| only_dga | 0.799 | 0.708 | 0.751 | 0.178 |
+| only_typosquat | 0.800 | 0.008 | 0.016 | 0.002 |
+| only_rdap | 0.943 | 0.232 | 0.372 | 0.014 |
+| dga + typosquat | 0.929 | 0.052 | 0.099 | 0.004 |
+| dga + typosquat + rdap | 0.964 | 0.106 | 0.191 | 0.004 |
+
+What the numbers say:
+
+- **The DGA figure is an artefact.** The artifact's largest coefficient is
+  `label_count` (2.68), learned from the synthetic training set, so every
+  name with three or more labels fires (324/324 malicious, 51/51 benign;
+  `mail.google.com` scores 0.83). On two-label names it fires on 17.1% of
+  malicious and 8.5% of benign — a weak signal. The 0.94 synthetic accuracy
+  does not transfer. Not retrained here, because that would change the
+  paper's reported DGA results.
+- **Registration age is the strongest real signal**: of malicious domains
+  with a date, 29.4% scored at least 0.5 (registered within about 197
+  days) versus 2.0% of benign, at 0.943 precision. Ages are measured after
+  listing, so at first sighting these domains were younger still.
+- **The Stage 16 dilution finding reproduces on real data.** Combining
+  signals under the weighted mean *lowers* recall (0.106 for all three
+  against 0.232 for rdap alone), for the reason the paper gives.
+- **43% of malicious rows (213/500) are subdomains of shared platforms**
+  (`pages.dev`, `web.app`, `netlify.app`, …). Registration age sees the
+  platform's old registration, so the heuristics catch 3 of them. Feeds,
+  not heuristics, are what covers this class.
+- Typosquat fired on 4 of 500 against ten configured brands: real phishing
+  mostly impersonates brands outside any fixed list.
+
+Labels are feed listings and Tranco ranks — real domains, asserted labels,
+not verified ground truth.
 
 ## Layout
 

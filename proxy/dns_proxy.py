@@ -368,6 +368,7 @@ def build_engine(settings: Settings):
         return AllowAllEngine()
 
     from engine import DecisionEngine, RiskAggregator
+    from engine.allowlist import Allowlist
     from engine.modules import REGISTRY
 
     modules = []
@@ -383,8 +384,10 @@ def build_engine(settings: Settings):
         modules.append(factory(settings) if factory else cls())
 
     aggregator = RiskAggregator.from_settings(settings)
+    allowlist = Allowlist.from_settings(settings)
     engine = DecisionEngine(modules, budget_ms=settings.engine_budget_ms,
-                            aggregator=aggregator)
+                            aggregator=aggregator,
+                            allowlist=allowlist if len(allowlist) else None)
     log.info("engine configured with modules: %s "
              "(flag>=%.2f block>=%.2f enforce=%s fail=%s)",
              ", ".join(names), aggregator.flag_at, aggregator.block_at,

@@ -76,6 +76,7 @@ class Settings:
     feed_file: str = ""           # a local snapshot wins over the network
     feed_format: str = "domains"  # domains | hosts | urls
     feed_auth_key: str = ""       # required by URLhaus since 30 June 2025
+    feed_extra_defaults: bool = True  # add the extra public feeds when unconfigured
     feed_refresh_s: float = 3600.0
     feed_stale_after_s: float = 86400.0
     feed_match_parents: bool = True
@@ -98,6 +99,7 @@ class Settings:
     aggregator_default_weight: float = 0.5
     #: Decisions are always computed and recorded. This governs whether a
     #: BLOCK is acted on. Default false: Stage 8 is where enforcement lands.
+    aggregator_ti_decisive: bool = True   # a feed hit sets the floor of the score
     aggregator_enforce: bool = False
     aggregator_fail_mode: str = "open"    # open | closed (requirement SR3)
 
@@ -135,6 +137,21 @@ class Settings:
     #: default: on a small test network per-domain history is the useful
     #: view, and it keeps API /lookup meaningful.
     beacon_per_client: bool = False
+
+    # -- registration age via RDAP -----------------------------------------
+    #: Empty uses engine.modules.rdap.DEFAULT_BASE_URL (rdap.org).
+    rdap_base_url: str = ""
+    rdap_new_within_s: float = 30 * 24 * 3600.0
+    rdap_established_after_s: float = 365 * 24 * 3600.0
+    rdap_timeout_s: float = 6.0
+
+    # -- operator allowlist ------------------------------------------------
+    #: Comma-separated domains that are always ALLOW (a name and everything
+    #: beneath it). The false-positive override; see engine/allowlist.py.
+    allowlist: str = ""
+    #: File with one domain per line, '#' comments allowed. Merged with the
+    #: list above.
+    allowlist_file: str = ""
 
     # -- DGA detection (Stage 13) -----------------------------------------
     #: Exported JSON artifact produced by tools/train_dga.py.
@@ -183,6 +200,8 @@ class Settings:
             feed_format=os.environ.get("DNSF_FEED_FORMAT", cls.feed_format),
             feed_auth_key=os.environ.get("DNSF_FEED_AUTH_KEY",
                                          cls.feed_auth_key),
+            feed_extra_defaults=_bool("DNSF_FEED_EXTRA_DEFAULTS",
+                                      cls.feed_extra_defaults),
             feed_refresh_s=_float("DNSF_FEED_REFRESH_S", cls.feed_refresh_s),
             feed_stale_after_s=_float("DNSF_FEED_STALE_AFTER_S",
                                       cls.feed_stale_after_s),
@@ -208,6 +227,8 @@ class Settings:
                                        cls.aggregator_block_at),
             aggregator_default_weight=_float("DNSF_AGGREGATOR_DEFAULT_WEIGHT",
                                              cls.aggregator_default_weight),
+            aggregator_ti_decisive=_bool("DNSF_AGGREGATOR_TI_DECISIVE",
+                                         cls.aggregator_ti_decisive),
             aggregator_enforce=_bool("DNSF_AGGREGATOR_ENFORCE",
                                      cls.aggregator_enforce),
             aggregator_fail_mode=os.environ.get("DNSF_AGGREGATOR_FAIL_MODE",
@@ -240,6 +261,16 @@ class Settings:
                                          cls.beacon_min_interval_s),
             beacon_per_client=_bool("DNSF_BEACON_PER_CLIENT",
                                     cls.beacon_per_client),
+            rdap_base_url=os.environ.get("DNSF_RDAP_BASE_URL",
+                                         cls.rdap_base_url),
+            rdap_new_within_s=_float("DNSF_RDAP_NEW_WITHIN_S",
+                                     cls.rdap_new_within_s),
+            rdap_established_after_s=_float("DNSF_RDAP_ESTABLISHED_AFTER_S",
+                                            cls.rdap_established_after_s),
+            rdap_timeout_s=_float("DNSF_RDAP_TIMEOUT_S", cls.rdap_timeout_s),
+            allowlist=os.environ.get("DNSF_ALLOWLIST", cls.allowlist),
+            allowlist_file=os.environ.get("DNSF_ALLOWLIST_FILE",
+                                          cls.allowlist_file),
             block_response=os.environ.get("DNSF_BLOCK_RESPONSE",
                                           cls.block_response).lower(),
             block_sinkhole_ipv4=os.environ.get("DNSF_BLOCK_SINKHOLE_IPV4",

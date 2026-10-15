@@ -62,6 +62,7 @@ _NOT_CONFIGURED_EXCEPTIONS = frozenset({
 #: to judge yet".
 _INSUFFICIENT_OBSERVATION_EXCEPTIONS = frozenset({
     "InsufficientObservations",   # engine/modules/beaconing.py
+    "RegistrationPending",        # engine/modules/rdap.py: lookup in flight
 })
 
 #: Feature keys that a module sets to signal "this OK, zero-score result is

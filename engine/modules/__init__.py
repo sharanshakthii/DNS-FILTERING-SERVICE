@@ -9,6 +9,7 @@ from .base import DetectionModule, ModuleResult, ModuleScore, QueryContext
 from .beaconing import BeaconingModule, InsufficientObservations
 from .dga import DGAModule, ModelUnavailable
 from .nrd import NewDomainModule
+from .rdap import RdapAgeModule, RegistrationPending, RegistrationUnknown
 from .null import FixedScoreModule, NullModule
 from .ti import FeedUnavailable, ThreatIntelModule
 from .typosquat import BrandsUnavailable, TyposquatModule
@@ -23,6 +24,7 @@ REGISTRY: dict[str, type[DetectionModule]] = {
     "typosquat": TyposquatModule,
     "dga": DGAModule,
     "beaconing": BeaconingModule,
+    "rdap": RdapAgeModule,
 }
 
 __all__ = [
@@ -36,6 +38,9 @@ __all__ = [
     "TyposquatModule",
     "DGAModule",
     "BeaconingModule",
+    "RdapAgeModule",
+    "RegistrationPending",
+    "RegistrationUnknown",
     "InsufficientObservations",
     "ModelUnavailable",
     "BrandsUnavailable",

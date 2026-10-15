@@ -24,28 +24,27 @@
 -->
 <style>
   :root {
-    /* Four surface levels carry depth; shadows are used sparingly. A warm
-       graphite foundation — deliberately not the blue-black of a generic
-       "AI dashboard". */
-    --ground:   #17140f;
-    --panel:    #1e1a14;
-    --raised:   #26221b;
-    --hairline: #382f22;
-    --hairline-bright: #4d4230;
+    /* Four surface levels carry depth via hairline borders, not shadows —
+       a near-black "classified terminal" foundation. */
+    --ground:   #060606;
+    --panel:    #1f1f1f;
+    --raised:   #313131;
+    --hairline: #252525;
+    --hairline-bright: #3d3d3d;
 
-    --ink:      #ece6d9;
-    --ink-soft: #b0a998;
-    --ink-dim:  #756e5c;
+    --ink:      #ffffff;
+    --ink-soft: #e5e5e5;
+    --ink-dim:  #7a7a7a;
 
     /* Verdict hues encode state. Muted on purpose: no neon. */
-    --allow:   #82966a;   /* sage */
-    --flag:    #c79a47;   /* amber */
-    --block:   #ab5138;   /* rust */
-    --unknown: #96897a;   /* stone */
+    --allow:   #4fb286;   /* teal-green */
+    --flag:    #c9a446;   /* amber */
+    --block:   #d1574a;   /* red */
+    --unknown: #7c8ba3;   /* slate */
 
-    --signal:  #c17a45;   /* burnt copper — interactive affordances only */
+    --signal:  #c5ff4a;   /* signal lime — interactive affordances only */
 
-    --r: 3px;
+    --r: 2px;
     --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
 
@@ -63,7 +62,7 @@
   body {
     margin: 0;
     background:
-      radial-gradient(1200px 600px at 70% -10%, rgba(193,122,69,.05) 0%, transparent 60%),
+      radial-gradient(1200px 600px at 70% -10%, rgba(197,255,74,.04) 0%, transparent 60%),
       var(--ground);
     color: var(--ink);
     font: 14px/1.55 var(--sans);
@@ -79,6 +78,26 @@
   .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .soft { color: var(--ink-soft); }
   .dim  { color: var(--ink-dim); }
+
+  /* ===================================================================
+     Background — a sparse node graph, not decoration. Most nodes and
+     edges sit at hairline opacity (a quiet network topology). A handful
+     glow in signal lime: the same "one signal catches the threat" idea
+     the console itself embodies, read at a glance before any data loads.
+     =================================================================== */
+  .bg-graph {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-edges line { stroke: var(--hairline-bright); stroke-width: 1; opacity: .28; }
+  .bg-nodes .bg-node { fill: var(--ink-dim); opacity: .35; }
+  .bg-nodes-flag .bg-node--flag { fill: var(--signal); opacity: .8; }
+
+  main, .honesty { position: relative; z-index: 1; }
 
   /* ===================================================================
      Intro — the rail draws itself, then takes its post in the header.
@@ -166,7 +185,7 @@
   /* A stage lights while that part of the pipeline is being worked. */
   .rail .stage.lit .node {
     stroke: var(--signal);
-    fill: rgba(193, 122, 69, .22);
+    fill: rgba(74, 159, 216, .22);
   }
   .rail .stage.lit .label { fill: var(--ink); }
 
@@ -202,7 +221,7 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    background: linear-gradient(180deg, #1c1811 0%, rgba(24,20,15,.92) 100%);
+    background: linear-gradient(180deg, #141414 0%, rgba(20,20,20,.92) 100%);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--hairline);
     padding: 14px 22px;
@@ -229,6 +248,8 @@
   header > div:first-child {
     display: flex;
     flex-direction: column-reverse;
+    align-items: center;
+    text-align: center;
     gap: 3px;
   }
 
@@ -263,11 +284,11 @@
     background: var(--ink-dim);
     transition: background-color 220ms var(--ease);
   }
-  .pill.ok   { color: var(--allow); border-color: rgba(130,150,106,.4); }
+  .pill.ok   { color: var(--allow); border-color: rgba(79,178,134,.4); }
   .pill.ok .dot   { background: var(--allow); }
-  .pill.warn { color: var(--flag); border-color: rgba(199,154,71,.4); }
+  .pill.warn { color: var(--flag); border-color: rgba(201,164,70,.4); }
   .pill.warn .dot { background: var(--flag); }
-  .pill.bad  { color: var(--block); border-color: rgba(171,81,56,.45); }
+  .pill.bad  { color: var(--block); border-color: rgba(209,87,74,.45); }
   .pill.bad .dot  { background: var(--block); }
 
   /* A quiet technical footnote, not a warning banner: no colour fill, no
@@ -275,11 +296,14 @@
      other secondary caption on the page. */
   .honesty {
     margin: 0;
-    padding: 5px 22px;
-    font-size: 10.5px;
+    padding: 16px 22px 28px;
+    font-size: 10px;
+    line-height: 1.5;
     color: var(--ink-dim);
     background: transparent;
-    border-bottom: 1px solid var(--hairline);
+    text-align: center;
+    max-width: 640px;
+    margin-inline: auto;
   }
 
   main {
@@ -289,13 +313,22 @@
     padding: 16px 22px 44px;
     align-items: start;
     max-width: 1600px;
+    margin-inline: auto;
   }
 
+  /* Large displays (1440p / 4K at 100% OS scaling) report a very wide CSS
+     viewport, which left the console small and stranded in one corner.
+     Scale the whole page proportionally so it keeps its designed density. */
+  @media (min-width: 2200px) and (min-height: 1000px) { html { zoom: 1.25; } }
+  @media (min-width: 2500px) and (min-height: 1300px) { html { zoom: 1.5; } }
+  @media (min-width: 3400px) and (min-height: 1800px) { html { zoom: 2; } }
+
   section {
-    background: linear-gradient(180deg, var(--panel), #18140e);
+    background: linear-gradient(180deg, var(--panel), #171717);
     border: 1px solid var(--hairline);
     border-radius: var(--r);
-    box-shadow: 0 1px 0 rgba(255,255,255,.02) inset;
+    box-shadow: 0 1px 0 rgba(255,255,255,.02) inset,
+                0 10px 24px -16px rgba(0,0,0,.6);
   }
 
   .stack { display: grid; gap: 16px; }
@@ -332,10 +365,11 @@
   input, select, button {
     font: inherit;
     color: var(--ink);
-    background: #171209;
+    background: #141414;
     border: 1px solid var(--hairline);
     border-radius: var(--r);
     padding: 6px 9px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.35) inset;
     transition: border-color var(--t-fast) var(--ease),
                 background-color var(--t-fast) var(--ease),
                 transform 80ms var(--ease);
@@ -343,8 +377,8 @@
   input:hover, select:hover, button:hover { border-color: var(--hairline-bright); }
   input.invalid { border-color: var(--block); }
 
-  button { cursor: pointer; background: #211c15; }
-  button:hover { background: #2a2318; }
+  button { cursor: pointer; background: var(--raised); }
+  button:hover { background: var(--hairline-bright); border-color: var(--signal); }
   button:active { transform: scale(.985); }
   button[disabled] { opacity: .45; cursor: default; transform: none; }
 
@@ -367,11 +401,12 @@
     align-items: center;
     gap: 10px;
     padding: 9px 14px 9px 0;
-    border-bottom: 1px solid rgba(56,47,34,.55);
+    border-bottom: 1px solid rgba(34,48,63,.55);
     cursor: pointer;
     transition: background-color var(--t-fast) var(--ease),
                 transform 80ms var(--ease);
   }
+  .row:nth-child(even) { background: rgba(255,255,255,.014); }
   .row:hover { background: var(--raised); }
   .row:active { transform: scale(.997); }
   .row[aria-selected="true"] {
@@ -403,11 +438,11 @@
     white-space: nowrap;
     transition: box-shadow 250ms var(--ease);
   }
-  .badge.ALLOW { color: var(--allow); }
-  .badge.FLAG  { color: var(--flag); }
-  .badge.BLOCK { color: var(--block); }
-  .badge.UNKNOWN, .badge.SERVFAIL, .badge.FORMERR { color: var(--unknown); }
-  .badge.bloom { box-shadow: 0 0 0 3px rgba(171,81,56,.18); }
+  .badge.ALLOW { color: var(--allow); background: rgba(79,178,134,.12); }
+  .badge.FLAG  { color: var(--flag); background: rgba(201,164,70,.12); }
+  .badge.BLOCK { color: var(--block); background: rgba(209,87,74,.14); }
+  .badge.UNKNOWN, .badge.SERVFAIL, .badge.FORMERR { color: var(--unknown); background: rgba(124,139,163,.10); }
+  .badge.bloom { box-shadow: 0 0 0 3px rgba(209,87,74,.18); }
   /* A decision recorded as BLOCK but never acted on must read differently. */
   .badge.observed { border-style: dashed; }
 
@@ -435,7 +470,7 @@
     border: 1px solid var(--hairline-bright);
     border-radius: var(--r);
     overflow: hidden;
-    background: #14100a;
+    background: #0a0a0a;
   }
 
   .slot {
@@ -464,7 +499,7 @@
   }
   .slot.excluded {
     background-image: repeating-linear-gradient(
-      45deg, rgba(150,137,122,.22) 0 5px, transparent 5px 10px);
+      45deg, rgba(124,139,163,.22) 0 5px, transparent 5px 10px);
   }
   .slot.excluded .tag { color: var(--ink-dim); }
 
@@ -518,7 +553,7 @@
   .reveal { opacity: 0; transform: translateY(6px); }
   .reveal.in { animation: rise 280ms var(--ease-out) forwards; }
 
-  .module { padding: 10px 0; border-bottom: 1px solid rgba(56,47,34,.5); }
+  .module { padding: 10px 0; border-bottom: 1px solid rgba(34,48,63,.5); }
   .module:last-child { border-bottom: 0; }
 
   .module-head {
@@ -529,7 +564,7 @@
   .math { font: 11.5px var(--mono); color: var(--ink-soft); }
 
   .contrib {
-    height: 6px; background: #14100a; border-radius: 3px;
+    height: 6px; background: #0a0a0a; border-radius: 3px;
     overflow: hidden; margin-top: 7px;
   }
   .contrib > i {
@@ -559,11 +594,11 @@
     border-radius: var(--r);
     padding: 10px 12px 12px;
     margin: 0 0 12px;
-    background: rgba(255,255,255,.012);
+    background: rgba(255,255,255,.016);
   }
   legend {
-    font-size: 10.5px; font-weight: 600; color: var(--ink-dim);
-    text-transform: uppercase; letter-spacing: .05em; padding: 0 5px;
+    font-size: 10.5px; font-weight: 700; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: .07em; padding: 0 5px;
   }
 
   .kv { display: grid; grid-template-columns: max-content 1fr;
@@ -573,13 +608,14 @@
 
   .summary {
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--ink);
-    background: rgba(193, 122, 69, .08);
+    background: rgba(74, 159, 216, .08);
     border-left: 2px solid var(--signal);
     border-radius: 0 var(--r) var(--r) 0;
-    padding: 9px 12px;
+    padding: 10px 13px;
     margin: 0 0 14px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.02) inset;
   }
 
   .note {
@@ -593,27 +629,37 @@
 
   .alert {
     margin: 0; padding: 10px 14px;
-    background: rgba(171,81,56,.10);
-    border-bottom: 1px solid rgba(171,81,56,.28);
-    color: #e3ab98; font-size: 12.5px;
+    background: rgba(209,87,74,.10);
+    border-bottom: 1px solid rgba(209,87,74,.28);
+    color: #f0a89b; font-size: 12.5px;
+    font-weight: 600;
   }
 
   .empty { padding: 40px 18px; text-align: center; color: var(--ink-soft); }
   .empty strong { display: block; color: var(--ink); font-size: 14px;
-                  margin-bottom: 8px; }
+                  font-weight: 650; margin-bottom: 8px; }
   .empty code {
     display: inline-block; margin-top: 10px;
     font: 12px var(--mono); color: var(--ink);
-    background: #14100a; border: 1px solid var(--hairline);
+    background: #0a0a0a; border: 1px solid var(--hairline);
     border-radius: 3px; padding: 4px 9px;
   }
 
-  .stats { display: flex; flex-wrap: wrap; gap: 20px 26px; padding: 14px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 0; padding: 14px; }
+  .stat {
+    padding: 2px 22px 2px 0;
+    margin-right: 22px;
+    border-right: 1px solid var(--hairline);
+  }
+  .stat:last-child { border-right: 0; margin-right: 0; padding-right: 0; }
   .stat .n {
-    font: 600 19px/1.15 var(--mono); letter-spacing: -0.02em;
+    font: 600 20px/1.2 var(--mono); letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
   }
-  .stat .k { font-size: 11px; color: var(--ink-dim); }
+  .stat .k {
+    font-size: 10.5px; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
   .stat .n.allow   { color: var(--allow); }
   .stat .n.flag    { color: var(--flag); }
   .stat .n.block   { color: var(--block); }
@@ -679,6 +725,227 @@
 </style>
 </head>
 <body>
+<svg class="bg-graph" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="bg-glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g class="bg-edges">
+    <line x1="708.4" y1="853.6" x2="533.8" y2="856.5"/>
+<line x1="641.8" y1="821.5" x2="533.8" y2="856.5"/>
+<line x1="1554.2" y1="838.2" x2="1417.0" y2="769.4"/>
+<line x1="1223.6" y1="643.8" x2="1198.1" y2="556.2"/>
+<line x1="1239.7" y1="256.3" x2="1245.2" y2="190.6"/>
+<line x1="1066.3" y1="295.8" x2="1027.6" y2="256.2"/>
+<line x1="1427.5" y1="666.6" x2="1435.4" y2="520.4"/>
+<line x1="123.6" y1="72.6" x2="70.5" y2="56.7"/>
+<line x1="374.7" y1="538.4" x2="313.1" y2="524.5"/>
+<line x1="1522.2" y1="646.7" x2="1488.0" y2="729.9"/>
+<line x1="1066.3" y1="295.8" x2="1122.0" y2="282.6"/>
+<line x1="1481.6" y1="339.4" x2="1537.0" y2="322.7"/>
+<line x1="1239.7" y1="256.3" x2="1335.7" y2="265.8"/>
+<line x1="833.4" y1="166.9" x2="871.3" y2="108.4"/>
+<line x1="1198.1" y1="556.2" x2="1277.1" y2="590.7"/>
+<line x1="283.8" y1="356.6" x2="148.5" y2="400.6"/>
+<line x1="1262.9" y1="115.3" x2="1339.6" y2="150.2"/>
+<line x1="1427.5" y1="666.6" x2="1380.3" y2="586.8"/>
+<line x1="990.7" y1="519.0" x2="958.9" y2="436.6"/>
+<line x1="221.8" y1="732.4" x2="146.9" y2="830.0"/>
+<line x1="283.8" y1="356.6" x2="313.1" y2="524.5"/>
+<line x1="608.6" y1="212.0" x2="553.0" y2="133.7"/>
+<line x1="593.1" y1="64.8" x2="502.5" y2="79.8"/>
+<line x1="1174.0" y1="819.1" x2="1271.2" y2="879.4"/>
+<line x1="553.0" y1="133.7" x2="502.5" y2="79.8"/>
+<line x1="970.8" y1="238.6" x2="1027.6" y2="256.2"/>
+<line x1="918.0" y1="773.4" x2="917.7" y2="679.7"/>
+<line x1="676.3" y1="736.0" x2="641.8" y2="821.5"/>
+<line x1="1055.8" y1="830.0" x2="1099.4" y2="790.5"/>
+<line x1="273.6" y1="210.0" x2="357.3" y2="248.1"/>
+<line x1="1053.2" y1="431.4" x2="1043.5" y2="501.7"/>
+<line x1="121.8" y1="601.8" x2="127.8" y2="663.1"/>
+<line x1="1461.2" y1="163.9" x2="1495.9" y2="74.2"/>
+<line x1="917.7" y1="679.7" x2="878.6" y2="825.0"/>
+<line x1="1223.6" y1="643.8" x2="1277.1" y2="590.7"/>
+<line x1="1488.0" y1="729.9" x2="1554.2" y2="838.2"/>
+<line x1="121.8" y1="601.8" x2="41.0" y2="551.0"/>
+<line x1="593.1" y1="64.8" x2="553.0" y2="133.7"/>
+<line x1="1262.9" y1="115.3" x2="1245.2" y2="190.6"/>
+<line x1="986.9" y1="621.5" x2="917.7" y2="679.7"/>
+<line x1="1435.4" y1="520.4" x2="1380.3" y2="586.8"/>
+<line x1="131.4" y1="297.4" x2="148.5" y2="400.6"/>
+<line x1="1537.0" y1="322.7" x2="1401.1" y2="339.6"/>
+<line x1="123.6" y1="72.6" x2="101.3" y2="131.3"/>
+<line x1="273.6" y1="210.0" x2="264.5" y2="60.1"/>
+<line x1="27.4" y1="726.5" x2="127.8" y2="663.1"/>
+<line x1="970.8" y1="238.6" x2="964.1" y2="161.5"/>
+<line x1="729.5" y1="355.5" x2="782.2" y2="289.6"/>
+<line x1="770.7" y1="592.8" x2="708.5" y2="541.6"/>
+<line x1="708.4" y1="853.6" x2="676.3" y2="736.0"/>
+<line x1="1344.3" y1="812.3" x2="1271.2" y2="879.4"/>
+<line x1="964.1" y1="161.5" x2="871.3" y2="108.4"/>
+<line x1="833.4" y1="166.9" x2="853.5" y2="270.2"/>
+<line x1="729.5" y1="355.5" x2="769.7" y2="438.9"/>
+<line x1="1055.8" y1="830.0" x2="1174.0" y2="819.1"/>
+<line x1="221.8" y1="732.4" x2="214.9" y2="676.6"/>
+<line x1="1053.2" y1="431.4" x2="1063.6" y2="375.8"/>
+<line x1="498.9" y1="576.5" x2="526.8" y2="664.5"/>
+<line x1="1262.9" y1="115.3" x2="1159.6" y2="127.2"/>
+<line x1="127.8" y1="663.1" x2="63.1" y2="651.0"/>
+<line x1="1367.8" y1="99.6" x2="1339.6" y2="150.2"/>
+<line x1="918.0" y1="773.4" x2="878.6" y2="825.0"/>
+<line x1="1344.3" y1="812.3" x2="1417.0" y2="769.4"/>
+<line x1="374.7" y1="538.4" x2="498.9" y2="576.5"/>
+<line x1="1427.5" y1="666.6" x2="1488.0" y2="729.9"/>
+<line x1="1135.1" y1="371.3" x2="1063.6" y2="375.8"/>
+<line x1="1488.0" y1="729.9" x2="1417.0" y2="769.4"/>
+<line x1="676.3" y1="736.0" x2="526.8" y2="664.5"/>
+<line x1="729.5" y1="355.5" x2="630.1" y2="304.2"/>
+<line x1="101.3" y1="131.3" x2="70.5" y2="56.7"/>
+<line x1="1105.5" y1="594.1" x2="1043.5" y2="501.7"/>
+<line x1="1027.6" y1="256.2" x2="1087.2" y2="206.1"/>
+<line x1="853.5" y1="270.2" x2="782.2" y2="289.6"/>
+<line x1="126.2" y1="463.7" x2="41.0" y2="551.0"/>
+<line x1="1367.8" y1="99.6" x2="1495.9" y2="74.2"/>
+<line x1="1189.4" y1="390.5" x2="1249.5" y2="373.0"/>
+<line x1="708.5" y1="541.6" x2="665.5" y2="492.0"/>
+<line x1="1461.2" y1="163.9" x2="1367.8" y2="99.6"/>
+<line x1="1427.5" y1="666.6" x2="1522.2" y2="646.7"/>
+<line x1="1367.8" y1="99.6" x2="1262.9" y2="115.3"/>
+<line x1="1245.2" y1="190.6" x2="1159.6" y2="127.2"/>
+<line x1="901.2" y1="400.2" x2="958.9" y2="436.6"/>
+<line x1="1105.5" y1="594.1" x2="1198.1" y2="556.2"/>
+<line x1="27.4" y1="726.5" x2="63.1" y2="651.0"/>
+<line x1="769.7" y1="438.9" x2="901.2" y2="400.2"/>
+<line x1="1099.4" y1="790.5" x2="1174.0" y2="819.1"/>
+<line x1="101.3" y1="131.3" x2="133.6" y2="177.6"/>
+<line x1="357.3" y1="248.1" x2="364.8" y2="185.5"/>
+<line x1="27.4" y1="726.5" x2="146.9" y2="830.0"/>
+<line x1="63.1" y1="651.0" x2="41.0" y2="551.0"/>
+<line x1="1481.6" y1="339.4" x2="1401.1" y2="339.6"/>
+<line x1="123.6" y1="72.6" x2="264.5" y2="60.1"/>
+<line x1="990.7" y1="519.0" x2="1043.5" y2="501.7"/>
+<line x1="127.8" y1="663.1" x2="214.9" y2="676.6"/>
+<line x1="118.7" y1="231.0" x2="133.6" y2="177.6"/>
+<line x1="273.6" y1="210.0" x2="364.8" y2="185.5"/>
+<line x1="769.7" y1="438.9" x2="665.5" y2="492.0"/>
+<line x1="770.7" y1="592.8" x2="665.5" y2="492.0"/>
+<line x1="126.2" y1="463.7" x2="148.5" y2="400.6"/>
+<line x1="630.1" y1="304.2" x2="608.6" y2="212.0"/>
+<line x1="1135.1" y1="371.3" x2="1249.5" y2="373.0"/>
+<line x1="357.3" y1="248.1" x2="283.8" y2="356.6"/>
+<line x1="121.8" y1="601.8" x2="63.1" y2="651.0"/>
+<line x1="1122.0" y1="282.6" x2="1087.2" y2="206.1"/>
+<line x1="118.7" y1="231.0" x2="131.4" y2="297.4"/>
+<line x1="127.8" y1="663.1" x2="221.8" y2="732.4"/>
+<line x1="1189.4" y1="390.5" x2="1135.1" y2="371.3"/>
+<line x1="1335.7" y1="265.8" x2="1401.1" y2="339.6"/>
+<line x1="708.4" y1="853.6" x2="641.8" y2="821.5"/>
+<line x1="986.9" y1="621.5" x2="990.7" y2="519.0"/>
+  </g>
+  <g class="bg-nodes">
+    <circle class="bg-node" cx="782.2" cy="289.6" r="2.1"/>
+    <circle class="bg-node" cx="990.7" cy="519.0" r="2.1"/>
+    <circle class="bg-node" cx="770.7" cy="592.8" r="2.1"/>
+<circle class="bg-node" cx="986.9" cy="621.5" r="2.1"/>
+<circle class="bg-node" cx="1427.5" cy="666.6" r="2.1"/>
+<circle class="bg-node" cx="273.6" cy="210.0" r="2.1"/>
+<circle class="bg-node" cx="729.5" cy="355.5" r="2.1"/>
+<circle class="bg-node" cx="1522.2" cy="646.7" r="2.1"/>
+<circle class="bg-node" cx="374.7" cy="538.4" r="2.1"/>
+<circle class="bg-node" cx="1461.2" cy="163.9" r="2.1"/>
+<circle class="bg-node" cx="970.8" cy="238.6" r="2.1"/>
+<circle class="bg-node" cx="121.8" cy="601.8" r="2.1"/>
+<circle class="bg-node" cx="498.9" cy="576.5" r="2.1"/>
+<circle class="bg-node" cx="1435.4" cy="520.4" r="2.1"/>
+<circle class="bg-node" cx="118.7" cy="231.0" r="2.1"/>
+<circle class="bg-node" cx="27.4" cy="726.5" r="2.1"/>
+<circle class="bg-node" cx="833.4" cy="166.9" r="2.1"/>
+<circle class="bg-node" cx="1055.8" cy="830.0" r="2.1"/>
+<circle class="bg-node" cx="357.3" cy="248.1" r="2.1"/>
+<circle class="bg-node" cx="918.0" cy="773.4" r="2.1"/>
+
+<circle class="bg-node" cx="964.1" cy="161.5" r="2.1"/>
+<circle class="bg-node" cx="127.8" cy="663.1" r="2.1"/>
+<circle class="bg-node" cx="871.3" cy="108.4" r="2.1"/>
+<circle class="bg-node" cx="769.7" cy="438.9" r="2.1"/>
+<circle class="bg-node" cx="126.2" cy="463.7" r="2.1"/>
+<circle class="bg-node" cx="1105.5" cy="594.1" r="2.1"/>
+<circle class="bg-node" cx="1481.6" cy="339.4" r="2.1"/>
+<circle class="bg-node" cx="630.1" cy="304.2" r="2.1"/>
+<circle class="bg-node" cx="1367.8" cy="99.6" r="2.1"/>
+<circle class="bg-node" cx="917.7" cy="679.7" r="2.1"/>
+<circle class="bg-node" cx="1189.4" cy="390.5" r="2.1"/>
+<circle class="bg-node" cx="131.4" cy="297.4" r="2.1"/>
+<circle class="bg-node" cx="593.1" cy="64.8" r="2.1"/>
+<circle class="bg-node" cx="1537.0" cy="322.7" r="2.1"/>
+<circle class="bg-node" cx="708.4" cy="853.6" r="2.1"/>
+<circle class="bg-node" cx="1239.7" cy="256.3" r="2.1"/>
+<circle class="bg-node" cx="1488.0" cy="729.9" r="2.1"/>
+<circle class="bg-node" cx="901.2" cy="400.2" r="2.1"/>
+<circle class="bg-node" cx="1344.3" cy="812.3" r="2.1"/>
+<circle class="bg-node" cx="1066.3" cy="295.8" r="2.1"/>
+<circle class="bg-node" cx="1380.3" cy="586.8" r="2.1"/>
+<circle class="bg-node" cx="1099.4" cy="790.5" r="2.1"/>
+<circle class="bg-node" cx="708.5" cy="541.6" r="2.1"/>
+<circle class="bg-node" cx="221.8" cy="732.4" r="2.1"/>
+<circle class="bg-node" cx="853.5" cy="270.2" r="2.1"/>
+<circle class="bg-node" cx="1335.7" cy="265.8" r="2.1"/>
+<circle class="bg-node" cx="148.5" cy="400.6" r="2.1"/>
+<circle class="bg-node" cx="665.5" cy="492.0" r="2.1"/>
+<circle class="bg-node" cx="1027.6" cy="256.2" r="2.1"/>
+<circle class="bg-node" cx="123.6" cy="72.6" r="2.1"/>
+<circle class="bg-node" cx="878.6" cy="825.0" r="2.1"/>
+<circle class="bg-node" cx="1174.0" cy="819.1" r="2.1"/>
+<circle class="bg-node" cx="1135.1" cy="371.3" r="2.1"/>
+<circle class="bg-node" cx="676.3" cy="736.0" r="2.1"/>
+<circle class="bg-node" cx="146.9" cy="830.0" r="2.1"/>
+<circle class="bg-node" cx="313.1" cy="524.5" r="2.1"/>
+<circle class="bg-node" cx="1043.5" cy="501.7" r="2.1"/>
+<circle class="bg-node" cx="1122.0" cy="282.6" r="2.1"/>
+<circle class="bg-node" cx="1495.9" cy="74.2" r="2.1"/>
+<circle class="bg-node" cx="101.3" cy="131.3" r="2.1"/>
+<circle class="bg-node" cx="1262.9" cy="115.3" r="2.1"/>
+<circle class="bg-node" cx="364.8" cy="185.5" r="2.1"/>
+<circle class="bg-node" cx="1271.2" cy="879.4" r="2.1"/>
+<circle class="bg-node" cx="608.6" cy="212.0" r="2.1"/>
+<circle class="bg-node" cx="133.6" cy="177.6" r="2.1"/>
+<circle class="bg-node" cx="1554.2" cy="838.2" r="2.1"/>
+<circle class="bg-node" cx="1417.0" cy="769.4" r="2.1"/>
+
+<circle class="bg-node" cx="63.1" cy="651.0" r="2.1"/>
+<circle class="bg-node" cx="1245.2" cy="190.6" r="2.1"/>
+<circle class="bg-node" cx="958.9" cy="436.6" r="2.1"/>
+<circle class="bg-node" cx="1063.6" cy="375.8" r="2.1"/>
+<circle class="bg-node" cx="264.5" cy="60.1" r="2.1"/>
+<circle class="bg-node" cx="1159.6" cy="127.2" r="2.1"/>
+<circle class="bg-node" cx="41.0" cy="551.0" r="2.1"/>
+<circle class="bg-node" cx="641.8" cy="821.5" r="2.1"/>
+<circle class="bg-node" cx="70.5" cy="56.7" r="2.1"/>
+<circle class="bg-node" cx="1198.1" cy="556.2" r="2.1"/>
+<circle class="bg-node" cx="1401.1" cy="339.6" r="2.1"/>
+<circle class="bg-node" cx="1339.6" cy="150.2" r="2.1"/>
+<circle class="bg-node" cx="1249.5" cy="373.0" r="2.1"/>
+<circle class="bg-node" cx="526.8" cy="664.5" r="2.1"/>
+<circle class="bg-node" cx="502.5" cy="79.8" r="2.1"/>
+<circle class="bg-node" cx="1277.1" cy="590.7" r="2.1"/>
+<circle class="bg-node" cx="533.8" cy="856.5" r="2.1"/>
+  </g>
+  <g class="bg-nodes-flag" filter="url(#bg-glow)">
+    <circle class="bg-node bg-node--flag" cx="214.9" cy="676.6" r="4.5"/>
+    <circle class="bg-node bg-node--flag" cx="283.8" cy="356.6" r="4.5"/>
+    <circle class="bg-node bg-node--flag" cx="1053.2" cy="431.4" r="4.5"/>
+
+
+<circle class="bg-node bg-node--flag" cx="553.0" cy="133.7" r="4.5"/>
+<circle class="bg-node bg-node--flag" cx="1223.6" cy="643.8" r="4.5"/>
+<circle class="bg-node bg-node--flag" cx="1087.2" cy="206.1" r="4.5"/>
+  </g>
+</svg>
 
 <!-- ===== Intro: the rail draws itself, then takes its post ============ -->
 <div id="intro" role="dialog" aria-label="Introduction">
@@ -697,7 +964,6 @@
   <header>
     <div>
       <h1>DNS filtering console</h1>
-      <div class="sub">PRJ_112 &middot; reading decisions this resolver has already made</div>
     </div>
     <div class="rail" id="head-rail"></div>
     <div style="justify-self:end; display:flex; gap:8px; align-items:center">
@@ -706,11 +972,6 @@
       <button id="signout" style="display:none">Sign out</button>
     </div>
   </header>
-
-  <p class="honesty">
-    Local development only &mdash; no authentication. These are internal debug signals,
-    not evaluation metrics: accuracy has not yet been measured against any labelled set.
-  </p>
 
   <main>
     <div class="stack">
@@ -756,6 +1017,14 @@
         </div>
       </section>
 
+      <section class="enter" aria-label="Devices needing attention">
+        <div class="head">
+          <h2>Devices needing attention</h2>
+          <span class="meta" id="alerts-meta"></span>
+        </div>
+        <div class="body" id="alerts"><p class="dim">Loading&hellip;</p></div>
+      </section>
+
     </div>
 
     <div class="stack">
@@ -777,6 +1046,11 @@
 
     </div>
   </main>
+
+  <p class="honesty">
+    Local development only &mdash; no authentication. These are internal debug signals,
+    not evaluation metrics: accuracy has not yet been measured against any labelled set.
+  </p>
 </div>
 
 <script>
@@ -797,7 +1071,7 @@ const STAGES = ["Query", "Signals", "Aggregation", "Verdict", "Enforcement"];
    `modules` lists what this engine is running. A module that exists but is
    switched off must not be labelled "not implemented", and neither is ever
    given a score or a slot on the weight track. */
-const ROADMAP = ["ti", "nrd", "typosquat", "dga", "beaconing"];
+const ROADMAP = ["ti", "nrd", "typosquat", "dga", "beaconing", "rdap"];
 let availableModules = [];
 
 let seenIds = new Set();
@@ -1017,6 +1291,48 @@ async function loadStats() {
     } else {
       $("stats").innerHTML =
         `<span class="dim">Statistics unavailable: ${esc(err.message)}</span>`;
+    }
+  }
+}
+
+/* -- device alerts ------------------------------------------------------ */
+
+/* A device reaching several distinct blocked or flagged domains in the last
+   hour. Computed by the API from stored decisions; the page only renders. */
+async function loadAlerts() {
+  try {
+    const data = await get("/alerts?window_s=3600&min_domains=3");
+    const list = data.alerts || [];
+    $("alerts-meta").textContent = `${list.length} in the last hour`;
+    $("alerts").classList.remove("stale");
+    if (!list.length) {
+      $("alerts").innerHTML = `<p class="dim">No device has reached
+        ${esc(data.min_domains)} or more distinct blocked or flagged domains
+        in the last hour.</p>`;
+      return;
+    }
+    $("alerts").innerHTML = list.map((a) => `
+      <div style="border-left:3px solid var(${a.severity === "high" ? "--block" : "--flag"});
+                  padding:6px 10px; margin:0 0 10px">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+          <span class="mono">client ${esc(a.client_hash)}</span>
+          ${badge(a.severity === "high" ? "BLOCK" : "FLAG", "")}
+          <span class="dim" style="font-size:11.5px">${esc(a.severity)} &middot;
+            ${esc(a.distinct_domains)} domains &middot;
+            ${esc(a.blocked_domains)} blocked &middot;
+            ${esc(a.risky_queries)} queries</span>
+        </div>
+        <div class="mono dim" style="font-size:11.5px; margin-top:4px; word-break:break-all">
+          ${a.top_domains.map((d) => `${esc(d.qname)} &times;${esc(d.count)}`).join("<br>")}
+        </div>
+      </div>`).join("") +
+      `<p class="note">${esc(data.note)}</p>`;
+  } catch (err) {
+    if ($("alerts").querySelector(".mono")) {
+      $("alerts").classList.add("stale");   /* keep last known, mark it stale */
+    } else {
+      $("alerts").innerHTML =
+        `<span class="dim">Alerts unavailable: ${esc(err.message)}</span>`;
     }
   }
 }
@@ -1455,10 +1771,10 @@ async function loadMode() {
 
 function setAuto(on) {
   if (timer) { clearInterval(timer); timer = null; }
-  if (on) timer = setInterval(() => { loadFeed(); loadStats(); }, 5000);
+  if (on) timer = setInterval(() => { loadFeed(); loadStats(); loadAlerts(); }, 5000);
 }
 
-$("refresh").addEventListener("click", () => { loadFeed(); loadStats(); });
+$("refresh").addEventListener("click", () => { loadFeed(); loadStats(); loadAlerts(); });
 $("filter-verdict").addEventListener("change", loadFeed);
 $("filter-qname").addEventListener("input", loadFeed);
 $("auto").addEventListener("change", (e) => setAuto(e.target.checked));
@@ -1504,6 +1820,7 @@ window.addEventListener("resize", () => {
 startIntro();
 loadStats();
 loadFeed();
+loadAlerts();
 loadMode();
 setAuto(true);
 </script>

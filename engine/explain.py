@@ -35,6 +35,7 @@ FRIENDLY_NAMES = {
     "typosquat": "brand impersonation",
     "dga": "the DGA model",
     "beaconing": "query periodicity",
+    "rdap": "registration age",
     "null": "the reference module",
 }
 
@@ -77,6 +78,10 @@ def _phrase_for(result: ModuleResult) -> str:
         signals = features.get("signals") or []
         return (f"{name} resembles {features['matched_brand']}"
                 f"{' (' + ', '.join(signals) + ')' if signals else ''}")
+
+    if result.module == "rdap" and features.get("registered"):
+        return (f"{name} shows it was registered on {features['registered']} "
+                f"({features.get('registration_age_days')} days ago)")
 
     if result.module == "dga":
         return f"{name} scored the label {result.score:.2f} DGA-like"

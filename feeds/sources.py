@@ -119,6 +119,25 @@ DEFAULT_FEED_URL = (
 )
 
 
+#: Additional no-authentication feeds, loaded alongside the default when the
+#: operator configures nothing. (name, url, format). Each was fetched with
+#: HTTP 200 during development; urlhaus-filter is a public mirror of abuse.ch
+#: URLhaus and is what lists many .top / malware-distribution hosts that the
+#: phishing list does not.
+EXTRA_DEFAULT_FEEDS = (
+    ("urlhaus-filter",
+     "https://malware-filter.gitlab.io/malware-filter/urlhaus-filter-hosts.txt",
+     "hosts"),
+    ("phishing-filter",
+     "https://malware-filter.gitlab.io/malware-filter/phishing-filter-hosts.txt",
+     "hosts"),
+    ("phishing-army",
+     "https://phishing.army/download/phishing_army_blocklist_extended.txt",
+     "domains"),
+    ("openphish", "https://openphish.com/feed.txt", "urls"),
+)
+
+
 def build_http_source(name: str, url: str, fmt: str = "domains",
                       auth_key: str | None = None) -> HttpFeedSource:
     return HttpFeedSource(name=name, url=url, fmt=fmt, auth_key=auth_key)

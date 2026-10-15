@@ -199,6 +199,79 @@ class DecisionRepository:
             "explanation": _json_or_none(head["explanation_json"]),
         }
 
+    # -- device alerts -----------------------------------------------------
+
+    def device_alerts(self, window_s: float = 3600.0,
+                      min_domains: int = 3, now=None) -> dict:
+        """Clients that reached several distinct risky domains recently.
+
+        One blocked lookup is usually a stray link. A device that keeps
+        reaching *different* blocked or flagged domains is the pattern of
+        malware or an adware extension phoning home, which is something an
+        administrator can act on. Counted per pseudonymised client, from the
+        decisions already stored; nothing new is collected.
+        """
+        from datetime import datetime, timedelta, timezone
+
+        window_s = max(60.0, min(float(window_s), 30 * 86400.0))
+        min_domains = max(1, int(min_domains))
+        now = now or datetime.now(timezone.utc)
+        cutoff = (now - timedelta(seconds=window_s)).isoformat()
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT q.client_hash, d.verdict, q.qname, COUNT(*) AS n, "
+                "       MIN(q.ts) AS first, MAX(q.ts) AS last "
+                "FROM queries q JOIN decisions d ON d.query_id = q.id "
+                "WHERE q.ts >= ? AND d.verdict IN ('BLOCK', 'FLAG') "
+                "  AND q.qname IS NOT NULL "
+                "GROUP BY q.client_hash, d.verdict, q.qname",
+                (cutoff,)).fetchall()
+
+        clients: dict[str, dict] = {}
+        for r in rows:
+            c = clients.setdefault(r["client_hash"], {
+                "client_hash": r["client_hash"], "blocked": {}, "flagged": {},
+                "queries": 0, "first": r["first"], "last": r["last"]})
+            bucket = c["blocked"] if r["verdict"] == "BLOCK" else c["flagged"]
+            bucket[r["qname"]] = bucket.get(r["qname"], 0) + r["n"]
+            c["queries"] += r["n"]
+            c["first"] = min(c["first"], r["first"])
+            c["last"] = max(c["last"], r["last"])
+
+        alerts = []
+        for c in clients.values():
+            domains = set(c["blocked"]) | set(c["flagged"])
+            if len(domains) < min_domains:
+                continue
+            ranked = sorted({**c["flagged"], **c["blocked"]}.items(),
+                            key=lambda kv: -kv[1])
+            alerts.append({
+                "client_hash": c["client_hash"],
+                "severity": ("high" if len(c["blocked"]) >= 2 * min_domains
+                             else "medium"),
+                "distinct_domains": len(domains),
+                "blocked_domains": len(c["blocked"]),
+                "flagged_domains": len(c["flagged"]),
+                "risky_queries": c["queries"],
+                "first_seen": c["first"],
+                "last_seen": c["last"],
+                "top_domains": [{"qname": q, "count": n} for q, n in ranked[:5]],
+            })
+
+        alerts.sort(key=lambda a: (a["severity"] != "high",
+                                   -a["distinct_domains"]))
+        return {
+            "window_s": window_s,
+            "min_domains": min_domains,
+            "alerts": alerts,
+            "note": ("A device reaching several distinct blocked or flagged "
+                     "domains may be infected or running unwanted software. "
+                     "This is a reason to inspect the device, not proof of "
+                     "infection. Clients are pseudonymised hashes; behind "
+                     "NAT one hash can be many devices."),
+        }
+
     # -- statistics --------------------------------------------------------
 
     def stats(self) -> dict:

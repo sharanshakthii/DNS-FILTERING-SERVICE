@@ -99,7 +99,8 @@ class RiskAggregator:
                  block_at: float = DEFAULT_BLOCK_AT,
                  default_weight: float = DEFAULT_WEIGHT,
                  enforce: bool = False,
-                 fail_mode: str = "open") -> None:
+                 fail_mode: str = "open",
+                 decisive: frozenset[str] | set[str] = frozenset()) -> None:
         if not 0.0 <= flag_at <= 1.0:
             raise ValueError(f"flag_at must be within [0,1], got {flag_at}")
         if not 0.0 <= block_at <= 1.0:
@@ -119,6 +120,11 @@ class RiskAggregator:
         self.default_weight = default_weight
         self.enforce = enforce
         self.fail_mode = fail_mode
+        #: Modules whose confirmed hit sets a floor under the score. A third
+        #: party's explicit listing is an assertion, not a hint, and averaging
+        #: it with quiet heuristic modules would let it be diluted below the
+        #: flag threshold (the Stage 16 finding).
+        self.decisive = frozenset(decisive)
 
     def weight_for(self, module: str) -> float:
         return self.weights.get(module, self.default_weight)
@@ -195,6 +201,11 @@ class RiskAggregator:
             })
 
         score = weighted_sum / counted_weight
+        decisive_hits = [c["module"] for c in contributions
+                         if c["counted"] and c["module"] in self.decisive
+                         and c["score"] >= 1.0]
+        if decisive_hits:
+            score = 1.0
         # Guard against float drift pushing a value a hair outside [0,1].
         score = round(min(1.0, max(0.0, score)), 6)
 
@@ -204,6 +215,10 @@ class RiskAggregator:
             "excluded": excluded,
             "counted_weight": round(counted_weight, 6),
             "weighted_sum": round(weighted_sum, 6),
+            **({"decisive_hit": decisive_hits,
+                "decisive_note": "a confirmed threat-intelligence listing sets "
+                                 "the score to 1.0 regardless of the mean"}
+               if decisive_hits else {}),
         })
 
     def _verdict_for(self, score: float) -> str:
@@ -273,4 +288,6 @@ class RiskAggregator:
             default_weight=settings.aggregator_default_weight,
             enforce=settings.aggregator_enforce,
             fail_mode=settings.aggregator_fail_mode,
+            decisive={"ti"} if getattr(settings, "aggregator_ti_decisive",
+                                       False) else set(),
         )

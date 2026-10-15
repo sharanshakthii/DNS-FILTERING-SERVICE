@@ -31,7 +31,24 @@
 
   Close and reopen PowerShell once after running `setx` -- it only affects
   new processes, not the terminal you ran it in.
+
+  -- Two modes ----------------------------------------------------------
+      & "E:\prj112 (26)\prj112\start.ps1"              # live (default)
+      & "E:\prj112 (26)\prj112\start.ps1" -Mode paper  # reproduces the paper
+
+  live   Five live no-auth threat-intelligence feeds, refreshed hourly; a
+         feed listing is decisive (score 1.0); registration age via RDAP.
+         For demonstrations and real use.
+  paper  The configuration the IEEE paper's results were produced with:
+         the pinned data/urlhaus.csv snapshot, the plain weighted mean of
+         formula (2), and the five original modules. Use this to reproduce
+         or show anything the paper reports.
 #>
+
+param(
+    [ValidateSet("live", "paper")]
+    [string]$Mode = "live"
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -45,12 +62,46 @@ if (-not (Test-Path $venvPython)) {
 }
 
 # -- known-good detection configuration (not secret, safe to keep here) ----
-$env:DNSF_ENGINE_MODULES     = "ti,nrd,typosquat,dga,beaconing"
 $env:DNSF_AGGREGATOR_ENFORCE = "true"
 $env:DNSF_TYPOSQUAT_BRANDS   = "google,paypal,microsoft,apple,amazon,facebook,instagram,netflix,linkedin,github"
 
+# -- TI feed source and aggregation, pinned explicitly per mode ------------
+# Every variable that decides the feed is set here, never inherited, so an
+# old terminal's DNSF_FEED_FILE cannot silently switch which database a
+# verdict came from. Same domain, two databases, two verdicts, no warning --
+# that is the failure this block exists to prevent.
+if ($Mode -eq "paper") {
+    $snapshot = Join-Path $ProjectRoot "data\urlhaus.csv"
+    if (-not (Test-Path $snapshot)) {
+        throw "Paper mode needs the pinned snapshot at $snapshot"
+    }
+    $env:DNSF_ENGINE_MODULES        = "ti,nrd,typosquat,dga,beaconing"
+    $env:DNSF_FEED_NAME             = "urlhaus"
+    $env:DNSF_FEED_FILE             = $snapshot
+    $env:DNSF_FEED_FORMAT           = "csv"
+    $env:DNSF_FEED_URL              = ""
+    $env:DNSF_FEED_AUTH_KEY         = ""      # local file; no key involved
+    $env:DNSF_AGGREGATOR_TI_DECISIVE = "false" # formula (2) exactly
+} else {
+    $env:DNSF_ENGINE_MODULES        = "ti,nrd,typosquat,dga,beaconing,rdap"
+    $env:DNSF_FEED_NAME             = "phishing-domains"
+    $env:DNSF_FEED_FILE             = ""
+    $env:DNSF_FEED_FORMAT           = "domains"
+    $env:DNSF_FEED_URL              = ""
+    $env:DNSF_AGGREGATOR_TI_DECISIVE = "true"
+    $env:DNSF_FEED_EXTRA_DEFAULTS   = "true"
+    # A URLhaus key without its per-account export URL makes the feed layer
+    # refuse to start (feeds/sources.py build_urlhaus_source). Live mode uses
+    # the no-auth feeds, so a key set globally is set aside for this launch
+    # rather than allowed to take threat intelligence down.
+    if ($env:DNSF_FEED_AUTH_KEY) {
+        Write-Warning "DNSF_FEED_AUTH_KEY is set but live mode uses the no-auth feeds; ignoring it for this launch."
+        $env:DNSF_FEED_AUTH_KEY = ""
+    }
+}
+
 # -- secrets must already be set as persistent user environment variables --
-$requiredSecrets = "DNSF_FEED_AUTH_KEY", "DNSF_AUTH_USERNAME", "DNSF_AUTH_PASSWORD_HASH"
+$requiredSecrets = "DNSF_AUTH_USERNAME", "DNSF_AUTH_PASSWORD_HASH"
 $missing = $requiredSecrets | Where-Object { -not (Test-Path "env:$_") }
 if ($missing) {
     Write-Warning "Not set in this environment: $($missing -join ', ')"
@@ -59,6 +110,7 @@ if ($missing) {
 }
 
 Write-Host "PRJ_112 -- starting from $ProjectRoot" -ForegroundColor Cyan
+Write-Host "  mode:       $Mode"
 Write-Host "  modules:    $($env:DNSF_ENGINE_MODULES)"
 Write-Host "  enforce:    $($env:DNSF_AGGREGATOR_ENFORCE)"
 Write-Host "  brands:     $($env:DNSF_TYPOSQUAT_BRANDS)"

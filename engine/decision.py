@@ -53,7 +53,8 @@ class DecisionEngine:
 
     def __init__(self, modules: list[DetectionModule] | None = None,
                  budget_ms: float = 50.0,
-                 aggregator: RiskAggregator | None = None) -> None:
+                 aggregator: RiskAggregator | None = None,
+                 allowlist=None) -> None:
         """`budget_ms` caps the total time modules may spend on one query.
 
         This is a cumulative guard checked between modules, not a hard
@@ -69,6 +70,9 @@ class DecisionEngine:
         # Aggregation is a separate object so the scoring policy can be
         # swapped or re-weighted in Stage 16 without touching dispatch.
         self.aggregator = aggregator or RiskAggregator()
+        #: Optional `engine.allowlist.Allowlist`; None keeps every earlier
+        #: stage's behaviour exactly.
+        self.allowlist = allowlist
         self._seen_names: set[str] = set()
         for module in self.modules:
             self._check_name(module)
@@ -223,12 +227,36 @@ class DecisionEngine:
             "summary": summarise(results, decision["explanation"]),
         }
 
+        verdict = decision["verdict"]
+        enforcement = decision["enforcement"]
+        entry = self.allowlist.match(ctx.qname) if self.allowlist else None
+        if entry is not None:
+            # The detectors' verdict is kept beside the override, never
+            # replaced silently: the evidence stays reviewable.
+            enforcement = {**enforcement, "would_block": False,
+                           "applied": False, "action": "forward",
+                           "allowlisted": True}
+            explanation = {
+                **explanation,
+                "allowlisted": {"entry": entry,
+                                "detector_verdict": verdict,
+                                "detector_score": decision["score"]},
+                "verdict": "ALLOW",
+                "enforced": False,
+                "enforcement": enforcement,
+                "summary": (f"Allowed because {entry} is on the operator "
+                            f"allowlist. Without it the detectors' verdict "
+                            f"would have been {verdict} "
+                            f"(score {decision['score']:.2f})."),
+            }
+            verdict = "ALLOW"
+
         return {
-            "verdict": decision["verdict"],
+            "verdict": verdict,
             "score": decision["score"],
             "evidence": [r.to_evidence() for r in results],
             "explanation": explanation,
-            "enforcement": decision["enforcement"],
+            "enforcement": enforcement,
         }
 
     def close(self) -> None:

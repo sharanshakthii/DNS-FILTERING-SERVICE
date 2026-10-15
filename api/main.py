@@ -246,6 +246,17 @@ def stats() -> dict:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+@app.get("/alerts", tags=["system"], dependencies=protected)
+def alerts(window_s: float = Query(3600.0, ge=60, le=30 * 86400),
+           min_domains: int = Query(3, ge=1, le=1000)) -> dict:
+    """Devices that reached several distinct blocked or flagged domains."""
+    try:
+        return repository.device_alerts(window_s=window_s,
+                                        min_domains=min_domains)
+    except DatabaseUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
 # -- lookup ---------------------------------------------------------------
 
 def _synthetic_query(domain: str):

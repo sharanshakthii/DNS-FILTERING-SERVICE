@@ -20,17 +20,17 @@
 -->
 <style>
   :root {
-    --ground:   #0b1017;
-    --panel:    #121a24;
-    --hairline: #223040;
-    --hairline-bright: #31445c;
-    --ink:      #e6edf5;
-    --ink-soft: #8b9bb0;
-    --ink-dim:  #5f7085;
-    --block:    #e0645c;
+    --ground:   #060606;
+    --panel:    #1f1f1f;
+    --hairline: #252525;
+    --hairline-bright: #3d3d3d;
+    --ink:      #ffffff;
+    --ink-soft: #e5e5e5;
+    --ink-dim:  #7a7a7a;
+    --block:    #d1574a;
     --allow:    #4fb286;
-    --signal:   #4a9fd8;
-    --r: 4px;
+    --signal:   #c5ff4a;
+    --r: 2px;
     --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
     --ease: cubic-bezier(.2, .8, .2, 1);
@@ -45,7 +45,7 @@
     display: grid;
     place-items: center;
     background:
-      radial-gradient(1000px 500px at 70% -10%, #16202c 0%, transparent 60%),
+      radial-gradient(1000px 500px at 70% -10%, rgba(197,255,74,.05) 0%, transparent 60%),
       var(--ground);
     color: var(--ink);
     font: 14px/1.55 var(--sans);
@@ -54,9 +54,31 @@
 
   :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 
+  /* Background — the same sparse node graph as the console, so signing in
+     and the console read as one product. */
+  .bg-graph {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-edges line { stroke: var(--hairline-bright); stroke-width: 1; opacity: .28; }
+  .bg-nodes .bg-node { fill: var(--ink-dim); opacity: .35; }
+  .bg-nodes-flag .bg-node--flag { fill: var(--signal); opacity: .8; }
+
+  /* Large displays (1440p / 4K at 100% OS scaling) report a very wide CSS
+     viewport, which made the sign-in card tiny. Scale proportionally. */
+  @media (min-width: 2200px) and (min-height: 1000px) { html { zoom: 1.25; } }
+  @media (min-width: 2500px) and (min-height: 1300px) { html { zoom: 1.5; } }
+  @media (min-width: 3400px) and (min-height: 1800px) { html { zoom: 2; } }
+
   .card {
+    position: relative;
+    z-index: 1;
     width: min(380px, 92vw);
-    background: linear-gradient(180deg, var(--panel), #10171f);
+    background: linear-gradient(180deg, var(--panel), #101010);
     border: 1px solid var(--hairline);
     border-radius: var(--r);
     padding: 26px 24px 22px;
@@ -88,11 +110,12 @@
     width: 100%;
     font: 14px var(--mono);
     color: var(--ink);
-    background: #0e161f;
+    background: #141414;
     border: 1px solid var(--hairline);
     border-radius: var(--r);
     padding: 9px 10px;
     margin-bottom: 14px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.35) inset;
     transition: border-color 120ms var(--ease);
   }
   input:hover, input:focus { border-color: var(--hairline-bright); }
@@ -102,21 +125,21 @@
     width: 100%;
     font: 600 14px var(--sans);
     color: var(--ink);
-    background: #1b2836;
+    background: #313131;
     border: 1px solid var(--hairline-bright);
     border-radius: var(--r);
     padding: 10px;
     cursor: pointer;
-    transition: background-color 120ms var(--ease), transform 80ms var(--ease);
+    transition: background-color 120ms var(--ease), border-color 120ms var(--ease), transform 80ms var(--ease);
   }
-  button:hover:not([disabled]) { background: #223247; }
+  button:hover:not([disabled]) { background: #3d3d3d; border-color: var(--signal); }
   button:active:not([disabled]) { transform: scale(.99); }
   button[disabled] { opacity: .55; cursor: default; }
 
   .alert {
     font-size: 12.5px;
-    color: #efa39d;
-    background: rgba(224,100,92,.09);
+    color: #f0a89b;
+    background: rgba(209,87,74,.10);
     border-left: 2px solid var(--block);
     border-radius: 0 var(--r) var(--r) 0;
     padding: 8px 11px;
@@ -125,8 +148,8 @@
 
   .info {
     font-size: 12.5px;
-    color: #9fd4b8;
-    background: rgba(79,178,134,.08);
+    color: #b8e0cc;
+    background: rgba(79,178,134,.10);
     border-left: 2px solid var(--allow);
     border-radius: 0 var(--r) var(--r) 0;
     padding: 8px 11px;
@@ -142,7 +165,7 @@
   .spinner {
     display: inline-block; width: 12px; height: 12px;
     margin-right: 7px; vertical-align: -1px;
-    border: 2px solid rgba(230,237,245,.25);
+    border: 2px solid rgba(255,255,255,.25);
     border-top-color: var(--ink);
     border-radius: 50%;
     animation: spin 700ms linear infinite;
@@ -161,6 +184,227 @@
 </style>
 </head>
 <body>
+<svg class="bg-graph" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="bg-glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g class="bg-edges">
+    <line x1="708.4" y1="853.6" x2="533.8" y2="856.5"/>
+<line x1="641.8" y1="821.5" x2="533.8" y2="856.5"/>
+<line x1="1554.2" y1="838.2" x2="1417.0" y2="769.4"/>
+<line x1="1223.6" y1="643.8" x2="1198.1" y2="556.2"/>
+<line x1="1239.7" y1="256.3" x2="1245.2" y2="190.6"/>
+<line x1="1066.3" y1="295.8" x2="1027.6" y2="256.2"/>
+<line x1="1427.5" y1="666.6" x2="1435.4" y2="520.4"/>
+<line x1="123.6" y1="72.6" x2="70.5" y2="56.7"/>
+<line x1="374.7" y1="538.4" x2="313.1" y2="524.5"/>
+<line x1="1522.2" y1="646.7" x2="1488.0" y2="729.9"/>
+<line x1="1066.3" y1="295.8" x2="1122.0" y2="282.6"/>
+<line x1="1481.6" y1="339.4" x2="1537.0" y2="322.7"/>
+<line x1="1239.7" y1="256.3" x2="1335.7" y2="265.8"/>
+<line x1="833.4" y1="166.9" x2="871.3" y2="108.4"/>
+<line x1="1198.1" y1="556.2" x2="1277.1" y2="590.7"/>
+<line x1="283.8" y1="356.6" x2="148.5" y2="400.6"/>
+<line x1="1262.9" y1="115.3" x2="1339.6" y2="150.2"/>
+<line x1="1427.5" y1="666.6" x2="1380.3" y2="586.8"/>
+<line x1="990.7" y1="519.0" x2="958.9" y2="436.6"/>
+<line x1="221.8" y1="732.4" x2="146.9" y2="830.0"/>
+<line x1="283.8" y1="356.6" x2="313.1" y2="524.5"/>
+<line x1="608.6" y1="212.0" x2="553.0" y2="133.7"/>
+<line x1="593.1" y1="64.8" x2="502.5" y2="79.8"/>
+<line x1="1174.0" y1="819.1" x2="1271.2" y2="879.4"/>
+<line x1="553.0" y1="133.7" x2="502.5" y2="79.8"/>
+<line x1="970.8" y1="238.6" x2="1027.6" y2="256.2"/>
+<line x1="918.0" y1="773.4" x2="917.7" y2="679.7"/>
+<line x1="676.3" y1="736.0" x2="641.8" y2="821.5"/>
+<line x1="1055.8" y1="830.0" x2="1099.4" y2="790.5"/>
+<line x1="273.6" y1="210.0" x2="357.3" y2="248.1"/>
+<line x1="1053.2" y1="431.4" x2="1043.5" y2="501.7"/>
+<line x1="121.8" y1="601.8" x2="127.8" y2="663.1"/>
+<line x1="1461.2" y1="163.9" x2="1495.9" y2="74.2"/>
+<line x1="917.7" y1="679.7" x2="878.6" y2="825.0"/>
+<line x1="1223.6" y1="643.8" x2="1277.1" y2="590.7"/>
+<line x1="1488.0" y1="729.9" x2="1554.2" y2="838.2"/>
+<line x1="121.8" y1="601.8" x2="41.0" y2="551.0"/>
+<line x1="593.1" y1="64.8" x2="553.0" y2="133.7"/>
+<line x1="1262.9" y1="115.3" x2="1245.2" y2="190.6"/>
+<line x1="986.9" y1="621.5" x2="917.7" y2="679.7"/>
+<line x1="1435.4" y1="520.4" x2="1380.3" y2="586.8"/>
+<line x1="131.4" y1="297.4" x2="148.5" y2="400.6"/>
+<line x1="1537.0" y1="322.7" x2="1401.1" y2="339.6"/>
+<line x1="123.6" y1="72.6" x2="101.3" y2="131.3"/>
+<line x1="273.6" y1="210.0" x2="264.5" y2="60.1"/>
+<line x1="27.4" y1="726.5" x2="127.8" y2="663.1"/>
+<line x1="970.8" y1="238.6" x2="964.1" y2="161.5"/>
+<line x1="729.5" y1="355.5" x2="782.2" y2="289.6"/>
+<line x1="770.7" y1="592.8" x2="708.5" y2="541.6"/>
+<line x1="708.4" y1="853.6" x2="676.3" y2="736.0"/>
+<line x1="1344.3" y1="812.3" x2="1271.2" y2="879.4"/>
+<line x1="964.1" y1="161.5" x2="871.3" y2="108.4"/>
+<line x1="833.4" y1="166.9" x2="853.5" y2="270.2"/>
+<line x1="729.5" y1="355.5" x2="769.7" y2="438.9"/>
+<line x1="1055.8" y1="830.0" x2="1174.0" y2="819.1"/>
+<line x1="221.8" y1="732.4" x2="214.9" y2="676.6"/>
+<line x1="1053.2" y1="431.4" x2="1063.6" y2="375.8"/>
+<line x1="498.9" y1="576.5" x2="526.8" y2="664.5"/>
+<line x1="1262.9" y1="115.3" x2="1159.6" y2="127.2"/>
+<line x1="127.8" y1="663.1" x2="63.1" y2="651.0"/>
+<line x1="1367.8" y1="99.6" x2="1339.6" y2="150.2"/>
+<line x1="918.0" y1="773.4" x2="878.6" y2="825.0"/>
+<line x1="1344.3" y1="812.3" x2="1417.0" y2="769.4"/>
+<line x1="374.7" y1="538.4" x2="498.9" y2="576.5"/>
+<line x1="1427.5" y1="666.6" x2="1488.0" y2="729.9"/>
+<line x1="1135.1" y1="371.3" x2="1063.6" y2="375.8"/>
+<line x1="1488.0" y1="729.9" x2="1417.0" y2="769.4"/>
+<line x1="676.3" y1="736.0" x2="526.8" y2="664.5"/>
+<line x1="729.5" y1="355.5" x2="630.1" y2="304.2"/>
+<line x1="101.3" y1="131.3" x2="70.5" y2="56.7"/>
+<line x1="1105.5" y1="594.1" x2="1043.5" y2="501.7"/>
+<line x1="1027.6" y1="256.2" x2="1087.2" y2="206.1"/>
+<line x1="853.5" y1="270.2" x2="782.2" y2="289.6"/>
+<line x1="126.2" y1="463.7" x2="41.0" y2="551.0"/>
+<line x1="1367.8" y1="99.6" x2="1495.9" y2="74.2"/>
+<line x1="1189.4" y1="390.5" x2="1249.5" y2="373.0"/>
+<line x1="708.5" y1="541.6" x2="665.5" y2="492.0"/>
+<line x1="1461.2" y1="163.9" x2="1367.8" y2="99.6"/>
+<line x1="1427.5" y1="666.6" x2="1522.2" y2="646.7"/>
+<line x1="1367.8" y1="99.6" x2="1262.9" y2="115.3"/>
+<line x1="1245.2" y1="190.6" x2="1159.6" y2="127.2"/>
+<line x1="901.2" y1="400.2" x2="958.9" y2="436.6"/>
+<line x1="1105.5" y1="594.1" x2="1198.1" y2="556.2"/>
+<line x1="27.4" y1="726.5" x2="63.1" y2="651.0"/>
+<line x1="769.7" y1="438.9" x2="901.2" y2="400.2"/>
+<line x1="1099.4" y1="790.5" x2="1174.0" y2="819.1"/>
+<line x1="101.3" y1="131.3" x2="133.6" y2="177.6"/>
+<line x1="357.3" y1="248.1" x2="364.8" y2="185.5"/>
+<line x1="27.4" y1="726.5" x2="146.9" y2="830.0"/>
+<line x1="63.1" y1="651.0" x2="41.0" y2="551.0"/>
+<line x1="1481.6" y1="339.4" x2="1401.1" y2="339.6"/>
+<line x1="123.6" y1="72.6" x2="264.5" y2="60.1"/>
+<line x1="990.7" y1="519.0" x2="1043.5" y2="501.7"/>
+<line x1="127.8" y1="663.1" x2="214.9" y2="676.6"/>
+<line x1="118.7" y1="231.0" x2="133.6" y2="177.6"/>
+<line x1="273.6" y1="210.0" x2="364.8" y2="185.5"/>
+<line x1="769.7" y1="438.9" x2="665.5" y2="492.0"/>
+<line x1="770.7" y1="592.8" x2="665.5" y2="492.0"/>
+<line x1="126.2" y1="463.7" x2="148.5" y2="400.6"/>
+<line x1="630.1" y1="304.2" x2="608.6" y2="212.0"/>
+<line x1="1135.1" y1="371.3" x2="1249.5" y2="373.0"/>
+<line x1="357.3" y1="248.1" x2="283.8" y2="356.6"/>
+<line x1="121.8" y1="601.8" x2="63.1" y2="651.0"/>
+<line x1="1122.0" y1="282.6" x2="1087.2" y2="206.1"/>
+<line x1="118.7" y1="231.0" x2="131.4" y2="297.4"/>
+<line x1="127.8" y1="663.1" x2="221.8" y2="732.4"/>
+<line x1="1189.4" y1="390.5" x2="1135.1" y2="371.3"/>
+<line x1="1335.7" y1="265.8" x2="1401.1" y2="339.6"/>
+<line x1="708.4" y1="853.6" x2="641.8" y2="821.5"/>
+<line x1="986.9" y1="621.5" x2="990.7" y2="519.0"/>
+  </g>
+  <g class="bg-nodes">
+    <circle class="bg-node" cx="782.2" cy="289.6" r="2.1"/>
+    <circle class="bg-node" cx="990.7" cy="519.0" r="2.1"/>
+    <circle class="bg-node" cx="770.7" cy="592.8" r="2.1"/>
+<circle class="bg-node" cx="986.9" cy="621.5" r="2.1"/>
+<circle class="bg-node" cx="1427.5" cy="666.6" r="2.1"/>
+<circle class="bg-node" cx="273.6" cy="210.0" r="2.1"/>
+<circle class="bg-node" cx="729.5" cy="355.5" r="2.1"/>
+<circle class="bg-node" cx="1522.2" cy="646.7" r="2.1"/>
+<circle class="bg-node" cx="374.7" cy="538.4" r="2.1"/>
+<circle class="bg-node" cx="1461.2" cy="163.9" r="2.1"/>
+<circle class="bg-node" cx="970.8" cy="238.6" r="2.1"/>
+<circle class="bg-node" cx="121.8" cy="601.8" r="2.1"/>
+<circle class="bg-node" cx="498.9" cy="576.5" r="2.1"/>
+<circle class="bg-node" cx="1435.4" cy="520.4" r="2.1"/>
+<circle class="bg-node" cx="118.7" cy="231.0" r="2.1"/>
+<circle class="bg-node" cx="27.4" cy="726.5" r="2.1"/>
+<circle class="bg-node" cx="833.4" cy="166.9" r="2.1"/>
+<circle class="bg-node" cx="1055.8" cy="830.0" r="2.1"/>
+<circle class="bg-node" cx="357.3" cy="248.1" r="2.1"/>
+<circle class="bg-node" cx="918.0" cy="773.4" r="2.1"/>
+
+<circle class="bg-node" cx="964.1" cy="161.5" r="2.1"/>
+<circle class="bg-node" cx="127.8" cy="663.1" r="2.1"/>
+<circle class="bg-node" cx="871.3" cy="108.4" r="2.1"/>
+<circle class="bg-node" cx="769.7" cy="438.9" r="2.1"/>
+<circle class="bg-node" cx="126.2" cy="463.7" r="2.1"/>
+<circle class="bg-node" cx="1105.5" cy="594.1" r="2.1"/>
+<circle class="bg-node" cx="1481.6" cy="339.4" r="2.1"/>
+<circle class="bg-node" cx="630.1" cy="304.2" r="2.1"/>
+<circle class="bg-node" cx="1367.8" cy="99.6" r="2.1"/>
+<circle class="bg-node" cx="917.7" cy="679.7" r="2.1"/>
+<circle class="bg-node" cx="1189.4" cy="390.5" r="2.1"/>
+<circle class="bg-node" cx="131.4" cy="297.4" r="2.1"/>
+<circle class="bg-node" cx="593.1" cy="64.8" r="2.1"/>
+<circle class="bg-node" cx="1537.0" cy="322.7" r="2.1"/>
+<circle class="bg-node" cx="708.4" cy="853.6" r="2.1"/>
+<circle class="bg-node" cx="1239.7" cy="256.3" r="2.1"/>
+<circle class="bg-node" cx="1488.0" cy="729.9" r="2.1"/>
+<circle class="bg-node" cx="901.2" cy="400.2" r="2.1"/>
+<circle class="bg-node" cx="1344.3" cy="812.3" r="2.1"/>
+<circle class="bg-node" cx="1066.3" cy="295.8" r="2.1"/>
+<circle class="bg-node" cx="1380.3" cy="586.8" r="2.1"/>
+<circle class="bg-node" cx="1099.4" cy="790.5" r="2.1"/>
+<circle class="bg-node" cx="708.5" cy="541.6" r="2.1"/>
+<circle class="bg-node" cx="221.8" cy="732.4" r="2.1"/>
+<circle class="bg-node" cx="853.5" cy="270.2" r="2.1"/>
+<circle class="bg-node" cx="1335.7" cy="265.8" r="2.1"/>
+<circle class="bg-node" cx="148.5" cy="400.6" r="2.1"/>
+<circle class="bg-node" cx="665.5" cy="492.0" r="2.1"/>
+<circle class="bg-node" cx="1027.6" cy="256.2" r="2.1"/>
+<circle class="bg-node" cx="123.6" cy="72.6" r="2.1"/>
+<circle class="bg-node" cx="878.6" cy="825.0" r="2.1"/>
+<circle class="bg-node" cx="1174.0" cy="819.1" r="2.1"/>
+<circle class="bg-node" cx="1135.1" cy="371.3" r="2.1"/>
+<circle class="bg-node" cx="676.3" cy="736.0" r="2.1"/>
+<circle class="bg-node" cx="146.9" cy="830.0" r="2.1"/>
+<circle class="bg-node" cx="313.1" cy="524.5" r="2.1"/>
+<circle class="bg-node" cx="1043.5" cy="501.7" r="2.1"/>
+<circle class="bg-node" cx="1122.0" cy="282.6" r="2.1"/>
+<circle class="bg-node" cx="1495.9" cy="74.2" r="2.1"/>
+<circle class="bg-node" cx="101.3" cy="131.3" r="2.1"/>
+<circle class="bg-node" cx="1262.9" cy="115.3" r="2.1"/>
+<circle class="bg-node" cx="364.8" cy="185.5" r="2.1"/>
+<circle class="bg-node" cx="1271.2" cy="879.4" r="2.1"/>
+<circle class="bg-node" cx="608.6" cy="212.0" r="2.1"/>
+<circle class="bg-node" cx="133.6" cy="177.6" r="2.1"/>
+<circle class="bg-node" cx="1554.2" cy="838.2" r="2.1"/>
+<circle class="bg-node" cx="1417.0" cy="769.4" r="2.1"/>
+
+<circle class="bg-node" cx="63.1" cy="651.0" r="2.1"/>
+<circle class="bg-node" cx="1245.2" cy="190.6" r="2.1"/>
+<circle class="bg-node" cx="958.9" cy="436.6" r="2.1"/>
+<circle class="bg-node" cx="1063.6" cy="375.8" r="2.1"/>
+<circle class="bg-node" cx="264.5" cy="60.1" r="2.1"/>
+<circle class="bg-node" cx="1159.6" cy="127.2" r="2.1"/>
+<circle class="bg-node" cx="41.0" cy="551.0" r="2.1"/>
+<circle class="bg-node" cx="641.8" cy="821.5" r="2.1"/>
+<circle class="bg-node" cx="70.5" cy="56.7" r="2.1"/>
+<circle class="bg-node" cx="1198.1" cy="556.2" r="2.1"/>
+<circle class="bg-node" cx="1401.1" cy="339.6" r="2.1"/>
+<circle class="bg-node" cx="1339.6" cy="150.2" r="2.1"/>
+<circle class="bg-node" cx="1249.5" cy="373.0" r="2.1"/>
+<circle class="bg-node" cx="526.8" cy="664.5" r="2.1"/>
+<circle class="bg-node" cx="502.5" cy="79.8" r="2.1"/>
+<circle class="bg-node" cx="1277.1" cy="590.7" r="2.1"/>
+<circle class="bg-node" cx="533.8" cy="856.5" r="2.1"/>
+  </g>
+  <g class="bg-nodes-flag" filter="url(#bg-glow)">
+    <circle class="bg-node bg-node--flag" cx="214.9" cy="676.6" r="4.5"/>
+    <circle class="bg-node bg-node--flag" cx="283.8" cy="356.6" r="4.5"/>
+    <circle class="bg-node bg-node--flag" cx="1053.2" cy="431.4" r="4.5"/>
+
+
+<circle class="bg-node bg-node--flag" cx="553.0" cy="133.7" r="4.5"/>
+<circle class="bg-node bg-node--flag" cx="1223.6" cy="643.8" r="4.5"/>
+<circle class="bg-node bg-node--flag" cx="1087.2" cy="206.1" r="4.5"/>
+  </g>
+</svg>
 
 <main class="card">
   <div class="rail">
