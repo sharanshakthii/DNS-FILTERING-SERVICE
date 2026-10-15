@@ -172,7 +172,94 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ---- Theme layer: aurora glass, matching the console ---- */
+  :root {
+    --ground: #050811; --panel: rgba(17, 24, 39, .62);
+    --hairline: rgba(148, 163, 184, .14); --hairline-bright: rgba(148, 163, 184, .28);
+    --ink: #f1f5f9; --ink-soft: #cbd5e1; --ink-dim: #8d9bb3;
+    --block: #f87171; --allow: #34d399; --signal: #22d3ee;
+    --brand: linear-gradient(100deg, #22d3ee 0%, #818cf8 55%, #c084fc 100%);
+    --sans: "Segoe UI Variable Text", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    --mono: "Cascadia Code", "Cascadia Mono", ui-monospace, Consolas, monospace;
+  }
+  body {
+    background:
+      radial-gradient(1000px 600px at 15% -10%, rgba(34, 211, 238, .11), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(167, 139, 250, .12), transparent 60%),
+      var(--ground);
+  }
+  .aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .aurora .blob { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%;
+                  filter: blur(70px); opacity: .32; will-change: transform; }
+  .aurora .b1 { left: -20vmax; top: -24vmax;
+    background: radial-gradient(circle, #0891b2 0%, transparent 62%);
+    animation: drift-a 26s ease-in-out infinite alternate; }
+  .aurora .b2 { right: -22vmax; bottom: -26vmax;
+    background: radial-gradient(circle, #7c3aed 0%, transparent 62%);
+    animation: drift-b 32s ease-in-out infinite alternate; }
+  @keyframes drift-a { to { transform: translate3d(14vmax, 10vmax, 0) scale(1.12); } }
+  @keyframes drift-b { to { transform: translate3d(-12vmax, -10vmax, 0) scale(.92); } }
+  .bg-graph { opacity: .5; }
+  .bg-edges line { stroke: rgba(148, 163, 184, .35); opacity: .22; }
+  .bg-nodes .bg-node { fill: #64748b; opacity: .4; }
+  .bg-nodes-flag .bg-node--flag { fill: var(--signal); }
+
+  .card {
+    width: min(400px, 92vw);
+    padding: 34px 30px 26px;
+    border-radius: 22px;
+    background: linear-gradient(160deg, rgba(30, 41, 59, .62), rgba(15, 23, 42, .55));
+    border: 1px solid var(--hairline);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+            backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .06);
+  }
+  .card::before {
+    content: ""; position: absolute; left: 24px; right: 24px; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(34, 211, 238, .8), transparent);
+  }
+  .brand-mark { display: block; width: 46px; height: 46px; margin: 0 0 14px; }
+  .brand-mark .shield { fill: rgba(34, 211, 238, .10); stroke: url(#brandgrad);
+                        stroke-width: 1.8; stroke-linejoin: round; }
+  .brand-mark .ring { fill: none; stroke: url(#brandgrad); stroke-width: 1.6; }
+  .brand-mark .arm { transform-box: view-box; transform-origin: 20px 21px;
+                     animation: sweep-arm 3.2s linear infinite; }
+  .brand-mark .blip { fill: var(--allow); animation: blip 3.2s ease-out infinite; }
+  @keyframes sweep-arm { to { transform: rotate(360deg); } }
+  @keyframes blip { 0%, 55% { opacity: 0; } 62% { opacity: 1; } 100% { opacity: 0; } }
+
+  .rail { margin: 0 0 18px; }
+  .rail line { stroke: rgba(148, 163, 184, .3); stroke-width: 2; }
+  .rail circle { fill: #0b1222; stroke: var(--signal); stroke-width: 1.8; }
+
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+       background: var(--brand); -webkit-background-clip: text; background-clip: text;
+       color: transparent; }
+  .sub { font-size: 13px; color: var(--ink-dim); }
+  label { font-size: 12px; font-weight: 600; color: var(--ink-soft); letter-spacing: .02em; }
+  input {
+    border-radius: 11px; padding: 11px 13px;
+    background: rgba(2, 6, 23, .6); border-color: var(--hairline-bright);
+    box-shadow: none;
+  }
+  input:focus { border-color: var(--signal); box-shadow: 0 0 0 3px rgba(34, 211, 238, .18);
+                outline: none; }
+  button {
+    background: var(--brand); color: #0b1020; border: 0; border-radius: 999px;
+    padding: 12px; font-weight: 700; letter-spacing: .01em;
+    box-shadow: 0 12px 30px -12px rgba(34, 211, 238, .7);
+  }
+  button:hover:not([disabled]) { background: var(--brand); transform: translateY(-1px);
+                                 filter: brightness(1.08); }
+  button:active:not([disabled]) { transform: scale(.98); }
+  .spinner { border-color: rgba(11, 16, 32, .3); border-top-color: #0b1020; }
+  .alert { border-radius: 10px; color: #fecaca; }
+  .info  { border-radius: 10px; }
+  .note  { border-left-color: rgba(34, 211, 238, .35); }
+
   @media (prefers-reduced-motion: reduce) {
+    .aurora .blob, .brand-mark .arm { animation: none !important; }
+    .brand-mark .blip { animation: none !important; opacity: 1; }
     *, *::before, *::after {
       animation-duration: 1ms !important;
       animation-iteration-count: 1 !important;
@@ -184,6 +271,18 @@
 </style>
 </head>
 <body>
+<div class="aurora" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="brandgrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"></stop><stop offset="1" stop-color="#c084fc"></stop>
+    </linearGradient>
+    <radialGradient id="sweepfade" cx="20" cy="21" r="9" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity=".05"></stop>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity=".55"></stop>
+    </radialGradient>
+  </defs>
+</svg>
 <svg class="bg-graph" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
   <defs>
     <filter id="bg-glow" x="-200%" y="-200%" width="500%" height="500%">
@@ -418,6 +517,12 @@
     </svg>
   </div>
 
+  <svg class="brand-mark" viewBox="0 0 40 42" aria-hidden="true" focusable="false">
+    <path class="shield" d="M20 3 L35 9 V20 C35 29 28.5 35.5 20 39 C11.5 35.5 5 29 5 20 V9 Z"></path>
+    <circle class="ring" cx="20" cy="21" r="9" opacity=".55"></circle>
+    <g class="arm"><path d="M20 21 L20 12 A9 9 0 0 1 28.4 17.8 Z" fill="url(#sweepfade)"></path></g>
+    <circle class="blip" cx="24.5" cy="16.5" r="1.6"></circle>
+  </svg>
   <h1>DNS filtering console</h1>
   <p class="sub">Sign in to view stored decisions and their evidence.</p>
 
