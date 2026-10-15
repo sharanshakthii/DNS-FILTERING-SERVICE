@@ -37,11 +37,14 @@ from .packet import (
     RCODE_SERVFAIL,
     build_formerr,
     build_response,
+    client_udp_limit,
     parse_query,
+    truncated_reply,
 )
 from .enforce import BlockResponder
 from .timing import Stopwatch
 from .upstream import (
+    _recv_exact,
     UpstreamError,
     UpstreamResolver,
     UpstreamTimeout,
@@ -113,6 +116,13 @@ class DNSProxy:
             timeout=settings.upstream_timeout,
         )
         self._sock: socket.socket | None = None
+        self._tcp_sock: socket.socket | None = None
+        self._tcp_conns: set[socket.socket] = set()
+        self._tcp_lock = threading.Lock()
+        self._tcp_pool = ThreadPoolExecutor(
+            max_workers=max(1, settings.tcp_max_connections),
+            thread_name_prefix="dnsf-tcp")
+        self.tcp_rejected = 0
         self._conn_resets = 0
         self._stop = threading.Event()
         self._pool = ThreadPoolExecutor(max_workers=settings.workers,
@@ -128,6 +138,10 @@ class DNSProxy:
         sock.settimeout(0.5)  # so the accept loop can notice self._stop
         self._sock = sock
 
+        tcp_thread = None
+        if self.settings.tcp_enabled:
+            tcp_thread = self._start_tcp(sock.getsockname()[1])
+
         log.info("listening on %s:%d, upstream %s:%d, engine=%s, "
                  "block_response=%s",
                  self.settings.listen_host, self.settings.listen_port,
@@ -137,6 +151,7 @@ class DNSProxy:
         try:
             self._serve_forever()
         finally:
+            self._stop_tcp(tcp_thread)
             self._pool.shutdown(wait=True)
             sock.close()
             self._sock = None
@@ -144,6 +159,11 @@ class DNSProxy:
 
     def stop(self) -> None:
         self._stop.set()
+
+    @property
+    def tcp_port(self) -> int | None:
+        """Bound TCP port, or None when TCP is disabled or could not bind."""
+        return self._tcp_sock.getsockname()[1] if self._tcp_sock else None
 
     @property
     def port(self) -> int:
@@ -191,6 +211,19 @@ class DNSProxy:
             log.exception("unhandled error while serving %s", addr[0])
 
     def _handle(self, data: bytes, addr: tuple[str, int]) -> None:
+        """One UDP datagram."""
+        self._handle_message(data, addr, lambda payload: self._send(payload, addr),
+                             "udp")
+
+    def _handle_message(self, data: bytes, addr: tuple[str, int], reply,
+                        transport: str) -> None:
+        """One DNS message, from either transport.
+
+        `reply(payload)` delivers the answer: a datagram for UDP, a
+        length-prefixed write for TCP. Everything else — parsing, the
+        decision, enforcement, upstream, the record — is one code path, so a
+        query is judged identically whichever way it arrived.
+        """
         stopwatch = Stopwatch()
 
         try:
@@ -203,9 +236,10 @@ class DNSProxy:
             txid = struct.unpack("!H", data[:2])[0] if len(data) >= 2 else None
             log.warning("malformed query from %s: %s", addr[0], exc)
             if txid is not None:
-                self._send(build_formerr(txid), addr)
+                reply(build_formerr(txid))
             self._record(None, addr, "FORMERR", stopwatch,
-                         error=str(exc), rcode="FORMERR")
+                         error=str(exc), rcode="FORMERR",
+                         transport=transport)
             return
 
         with stopwatch.measure("decide"):
@@ -225,7 +259,7 @@ class DNSProxy:
         if enforcement.get("action") == "block":
             with stopwatch.measure("enforce"):
                 payload, rcode_name = self.blocker.build(query)
-            self._send(payload, addr)
+            reply(payload)
             # Deliberately returns before upstream.forward: an enforced block
             # must not leak the queried name to the upstream resolver, which
             # would defeat the point of blocking it.
@@ -236,7 +270,7 @@ class DNSProxy:
                          score=decision["score"],
                          evidence=decision["evidence"],
                          explanation=decision.get("explanation"),
-                         rcode=rcode_name)
+                         rcode=rcode_name, transport=transport)
             return
 
         try:
@@ -249,7 +283,7 @@ class DNSProxy:
             # distribution.
             stopwatch.record("upstream", exc.elapsed_ms)
             log.warning("upstream timeout for %s: %s", query.question.qname, exc)
-            self._send(build_response(query, RCODE_SERVFAIL), addr)
+            reply(build_response(query, RCODE_SERVFAIL))
             # Detection ran before forwarding, so its evidence exists and must
             # be kept. Malicious domains are disproportionately dead — Bilge
             # et al. (NDSS 2011) found most live under two days — so dropping
@@ -258,23 +292,133 @@ class DNSProxy:
             self._record(query, addr, "SERVFAIL", stopwatch,
                          score=decision["score"], evidence=decision["evidence"],
                          explanation=decision.get("explanation"),
-                         error="upstream_timeout", rcode="SERVFAIL")
+                         error="upstream_timeout", rcode="SERVFAIL",
+                         transport=transport)
             return
         except UpstreamError as exc:
             stopwatch.record("upstream", getattr(exc, "elapsed_ms", 0.0))
             log.warning("upstream error for %s: %s", query.question.qname, exc)
-            self._send(build_response(query, RCODE_SERVFAIL), addr)
+            reply(build_response(query, RCODE_SERVFAIL))
             self._record(query, addr, "SERVFAIL", stopwatch,
                          score=decision["score"], evidence=decision["evidence"],
                          explanation=decision.get("explanation"),
-                         error=str(exc), rcode="SERVFAIL")
+                         error=str(exc), rcode="SERVFAIL",
+                         transport=transport)
             return
 
-        self._send(response, addr)
+        truncated = False
+        if transport == "udp" and len(response) > client_udp_limit(query):
+            # Larger than this client accepts over UDP: hand it a TC reply so
+            # it asks again over TCP, where the full answer is served.
+            response = truncated_reply(query, response)
+            truncated = True
+        reply(response)
         self._record(query, addr, decision["verdict"], stopwatch,
                      score=decision["score"], evidence=decision["evidence"],
                      explanation=decision.get("explanation"),
-                     rcode="NOERROR")
+                     rcode="NOERROR", transport=transport,
+                     truncated=truncated)
+
+    # -- TCP (RFC 7766) ------------------------------------------------------
+
+    def _start_tcp(self, port: int):
+        """Listen for TCP on the UDP port. Failure leaves UDP serving.
+
+        A port free for UDP can still be taken for TCP; refusing to serve DNS
+        at all over that would turn a partial feature into an outage.
+        """
+        try:
+            tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp.bind((self.settings.listen_host, port))
+            tcp.listen(64)
+            tcp.settimeout(0.5)
+        except OSError as exc:
+            log.warning("TCP listener unavailable on %s:%d (%s); serving UDP only",
+                        self.settings.listen_host, port, exc)
+            return None
+        self._tcp_sock = tcp
+        thread = threading.Thread(target=self._tcp_accept_loop,
+                                  name="dnsf-tcp-accept", daemon=True)
+        thread.start()
+        log.info("TCP listening on %s:%d (idle timeout %.0fs, max %d connections)",
+                 self.settings.listen_host, port,
+                 self.settings.tcp_idle_timeout,
+                 self.settings.tcp_max_connections)
+        return thread
+
+    def _stop_tcp(self, thread) -> None:
+        if self._tcp_sock is not None:
+            self._tcp_sock.close()
+        with self._tcp_lock:
+            for conn in list(self._tcp_conns):
+                try:
+                    conn.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+        if thread is not None:
+            thread.join(timeout=2)
+        self._tcp_pool.shutdown(wait=True, cancel_futures=True)
+        self._tcp_sock = None
+
+    def _tcp_accept_loop(self) -> None:
+        while not self._stop.is_set():
+            try:
+                conn, addr = self._tcp_sock.accept()
+            except socket.timeout:
+                continue
+            except OSError:
+                if self._stop.is_set():
+                    break
+                continue
+            with self._tcp_lock:
+                if len(self._tcp_conns) >= self.settings.tcp_max_connections:
+                    self.tcp_rejected += 1
+                    conn.close()
+                    log.warning("TCP connection from %s refused: limit of %d "
+                                "reached", addr[0],
+                                self.settings.tcp_max_connections)
+                    continue
+                self._tcp_conns.add(conn)
+            self._tcp_pool.submit(self._serve_tcp_connection, conn, addr)
+
+    def _serve_tcp_connection(self, conn: socket.socket,
+                              addr: tuple[str, int]) -> None:
+        """Answer queries on one connection until it closes or idles out.
+
+        Queries on a connection are answered in order. Each message carries
+        a two-byte length prefix (RFC 1035 4.2.2).
+        """
+        send_lock = threading.Lock()
+
+        def reply(payload: bytes) -> None:
+            with send_lock:
+                try:
+                    conn.sendall(struct.pack("!H", len(payload)) + payload)
+                except OSError as exc:
+                    log.debug("TCP reply to %s failed: %s", addr[0], exc)
+
+        try:
+            conn.settimeout(self.settings.tcp_idle_timeout)
+            while not self._stop.is_set():
+                try:
+                    length = struct.unpack("!H", _recv_exact(conn, 2))[0]
+                    if length == 0:
+                        break
+                    data = _recv_exact(conn, length)
+                except OSError:
+                    break           # closed, reset, or idle past the timeout
+                try:
+                    self._handle_message(data, addr, reply, "tcp")
+                except Exception:
+                    log.exception("unhandled error while serving %s over TCP",
+                                  addr[0])
+        finally:
+            with self._tcp_lock:
+                self._tcp_conns.discard(conn)
+            try:
+                conn.close()
+            except OSError:
+                pass
 
     def _client_id(self, ip: str) -> str:
         """Pseudonymise a client address for the engine.
@@ -299,7 +443,8 @@ class DNSProxy:
                 stopwatch: Stopwatch, *, score: float = 0.0,
                 evidence: list | None = None, rcode: str = "",
                 error: str | None = None,
-                explanation: dict | None = None) -> None:
+                explanation: dict | None = None,
+                transport: str = "udp", truncated: bool = False) -> None:
         """Emit the structured record for one query.
 
         `latency_ms` is deliberately broken out by phase. The added cost of
@@ -324,7 +469,10 @@ class DNSProxy:
             "latency_ms": latency,
             "added_latency_ms": added,
             "engine": self.engine.name,
+            "transport": transport,
         }
+        if truncated:
+            payload["truncated_for_udp"] = True
         if error:
             payload["error"] = error
 

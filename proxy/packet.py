@@ -249,3 +249,49 @@ def rebuild_with_txid(response: bytes, txid: int) -> bytes:
     if len(response) < 2:
         raise MalformedQuery("response too short to restamp")
     return struct.pack("!H", txid) + response[2:]
+
+
+# -- UDP size limits (RFC 1035 4.2.1, RFC 6891 6.2.3) -------------------------
+
+#: The largest UDP reply a client that sent no EDNS OPT record will accept.
+CLASSIC_UDP_LIMIT = 512
+TYPE_OPT = 41
+FLAG_TC = 0x0200
+
+
+def client_udp_limit(query: Query) -> int:
+    """The UDP payload size the client advertised, or 512 if none.
+
+    Read from the OPT pseudo-record in the query's additional section. Any
+    parsing doubt falls back to 512, the one size every client accepts.
+    """
+    raw = query.raw
+    try:
+        _txid, _flags, qd, an, ns, ar = struct.unpack("!HHHHHH", raw[:HEADER_LEN])
+    except struct.error:
+        return CLASSIC_UDP_LIMIT
+    if qd != 1 or an or ns or not ar:
+        return CLASSIC_UDP_LIMIT
+    offset = HEADER_LEN + len(query.question.qname_wire) + 4
+    for _ in range(ar):
+        # An OPT record's owner name is the root: a single zero byte.
+        if offset + 11 > len(raw) or raw[offset] != 0:
+            return CLASSIC_UDP_LIMIT
+        rtype, rclass, _ttl, rdlen = struct.unpack(
+            "!HHIH", raw[offset + 1:offset + 11])
+        if rtype == TYPE_OPT:
+            return max(CLASSIC_UDP_LIMIT, min(rclass, 65535))
+        offset += 11 + rdlen
+    return CLASSIC_UDP_LIMIT
+
+
+def truncated_reply(query: Query, response: bytes) -> bytes:
+    """Header and question only, TC set: "ask me again over TCP".
+
+    Keeps the response's flags and rcode, drops every record, and restores
+    the client's question. A client receiving this retries over TCP.
+    """
+    flags = struct.unpack("!H", response[2:4])[0] if len(response) >= 4 else 0x8180
+    header = struct.pack("!HHHHHH", query.txid, flags | FLAG_TC, 1, 0, 0, 0)
+    return header + query.question.qname_wire + struct.pack(
+        "!HH", query.question.qtype, query.question.qclass)

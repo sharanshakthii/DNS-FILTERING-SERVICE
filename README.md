@@ -144,6 +144,9 @@ Configuration is by environment variable:
 | `DNSF_RDAP_NEW_WITHIN_S` | `2592000` | Registered within 30 days scores 1.0 |
 | `DNSF_RDAP_ESTABLISHED_AFTER_S` | `31536000` | Registered over a year ago scores 0.0 |
 | `DNSF_RDAP_TIMEOUT_S` | `6.0` | Per-lookup timeout (background, never on the query path) |
+| `DNSF_TCP_ENABLED` | `true` | DNS over TCP on the same port (RFC 7766) |
+| `DNSF_TCP_IDLE_TIMEOUT` | `10.0` | Seconds a TCP connection may idle between queries |
+| `DNSF_TCP_MAX_CONNECTIONS` | `64` | Concurrent TCP connections; extras are closed |
 | `DNSF_PSL_MODE` | `off` | `off` (last two labels, as published), `icann`, or `full` (incl. hosting platforms) |
 | `DNSF_ALLOWLIST` | *(empty)* | Comma-separated domains always allowed, with subdomains |
 | `DNSF_ALLOWLIST_FILE` | *(unset)* | Same, one domain per line, `#` comments allowed |
@@ -1124,6 +1127,28 @@ registration date; the evidence carries `age_source: "rdap"`.
   `.lan`, `.home`, `.test`, …) and IP literals are never sent.
 - A recent registration is a risk signal, not proof: new legitimate sites
   exist. `rdap` takes the 0.5 unlisted-module weight.
+
+### DNS over TCP
+
+Large answers (big TXT records, DNSKEY, long record sets) do not fit in a
+UDP reply. Before this, a truncated upstream reply reached the client, the
+client retried over TCP, and nothing was listening — the lookup failed.
+
+- **Upstream:** a UDP reply with TC set is re-asked over TCP, with the same
+  random transaction ID and question check as UDP (`proxy/upstream.py`).
+- **Clients:** the proxy listens on TCP at the UDP port. Messages carry the
+  two-byte length prefix; several queries may share a connection; idle
+  connections close after `DNSF_TCP_IDLE_TIMEOUT`; connections beyond
+  `DNSF_TCP_MAX_CONNECTIONS` are refused. If TCP cannot bind, UDP keeps
+  serving and a warning is logged.
+- **UDP size limit:** a reply larger than the client advertised (512 bytes
+  without EDNS, RFC 6891 otherwise) is replaced by a TC reply, so the
+  client moves to TCP rather than receiving an oversized datagram.
+
+Both transports run one decision path: the same modules, verdict,
+enforcement (a block over TCP never reaches upstream) and record, which
+gains a `transport` field. Mode B latency was unchanged within run-to-run
+noise (enforced-block p50 ranged 7.6–9.6 ms on both the old and new code).
 
 ### Public Suffix List (`DNSF_PSL_MODE`)
 

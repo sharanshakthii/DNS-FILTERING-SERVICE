@@ -57,13 +57,41 @@ class UpstreamTimeout(UpstreamError):
     pass
 
 
+#: TC ("truncated") bit in the DNS header flags (RFC 1035 4.1.1).
+TC_FLAG = 0x0200
+
+#: Largest DNS message a TCP length prefix can describe (RFC 1035 4.2.2).
+MAX_TCP_MESSAGE = 65535
+
+
+def is_truncated(message: bytes) -> bool:
+    return len(message) >= 4 and bool(
+        struct.unpack("!H", message[2:4])[0] & TC_FLAG)
+
+
+def _recv_exact(sock: socket.socket, n: int) -> bytes:
+    chunks, remaining = [], n
+    while remaining:
+        chunk = sock.recv(remaining)
+        if not chunk:
+            raise ConnectionError("connection closed mid-message")
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b"".join(chunks)
+
+
 class UpstreamResolver:
     def __init__(self, host: str, port: int = 53, timeout: float = 2.0,
-                 max_spoof_rejects: int = 3) -> None:
+                 max_spoof_rejects: int = 3, tcp_fallback: bool = True) -> None:
+        """`tcp_fallback`: when a UDP reply arrives truncated (TC set), ask
+        again over TCP instead of handing the client a partial answer that
+        its own TCP retry could never complete (RFC 7766 section 5)."""
         self.host = host
         self.port = port
         self.timeout = timeout
         self.max_spoof_rejects = max_spoof_rejects
+        self.tcp_fallback = tcp_fallback
+        self.tcp_retries = 0
 
     def forward(self, query: Query) -> tuple[bytes, float]:
         """Forward `query` upstream and return (response bytes, elapsed ms).
@@ -132,6 +160,13 @@ class UpstreamResolver:
                     log.warning("reply from unexpected source %s (expected %s)",
                                 addr[0], self.host)
                 elif response_matches(upstream_request, data):
+                    if self.tcp_fallback and is_truncated(data):
+                        self.tcp_retries += 1
+                        log.info("truncated UDP reply for %s; retrying over TCP",
+                                 query.question.qname)
+                        response, tcp_ms = self.forward_tcp(query)
+                        udp_ms = (time.perf_counter() - start) * 1000.0 - tcp_ms
+                        return response, udp_ms + tcp_ms
                     elapsed_ms = (time.perf_counter() - start) * 1000.0
                     return rebuild_with_txid(data, query.txid), elapsed_ms
                 else:
@@ -144,3 +179,41 @@ class UpstreamResolver:
                         f"{rejects} non-matching replies for "
                         f"{query.question.qname}; giving up",
                         (time.perf_counter() - start) * 1000.0)
+
+    def forward_tcp(self, query: Query) -> tuple[bytes, float]:
+        """Forward `query` over TCP; return (response, elapsed ms).
+
+        Same guarantees as the UDP path: a fresh random transaction ID
+        upstream, the reply checked against the outstanding question before
+        it is trusted, and the client's ID restored. TCP itself makes
+        off-path injection far harder, but the check costs nothing and keeps
+        both transports to one rule.
+        """
+        upstream_txid = secrets.randbits(16)
+        outbound = struct.pack("!H", upstream_txid) + query.raw[2:]
+        upstream_request = Query(txid=upstream_txid, flags=query.flags,
+                                 question=query.question, raw=outbound)
+        start = time.perf_counter()
+
+        def elapsed() -> float:
+            return (time.perf_counter() - start) * 1000.0
+
+        try:
+            with socket.create_connection((self.host, self.port),
+                                          timeout=self.timeout) as sock:
+                sock.settimeout(self.timeout)
+                sock.sendall(struct.pack("!H", len(outbound)) + outbound)
+                length = struct.unpack("!H", _recv_exact(sock, 2))[0]
+                data = _recv_exact(sock, length)
+        except socket.timeout as exc:
+            raise UpstreamTimeout(
+                f"no TCP reply from {self.host}:{self.port} within "
+                f"{self.timeout}s", elapsed()) from exc
+        except (OSError, ConnectionError) as exc:
+            raise UpstreamError(f"TCP exchange failed: {exc}",
+                                elapsed()) from exc
+
+        if not response_matches(upstream_request, data):
+            raise UpstreamError(
+                f"TCP reply does not answer {query.question.qname}", elapsed())
+        return rebuild_with_txid(data, query.txid), elapsed()

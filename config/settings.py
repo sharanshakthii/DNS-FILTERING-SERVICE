@@ -52,6 +52,13 @@ class Settings:
     upstream_port: int = 53
     upstream_timeout: float = 2.0
     workers: int = 16
+    #: DNS over TCP on the same port (RFC 7766). Clients fall back to TCP when
+    #: a UDP reply is truncated; without a listener that lookup fails.
+    tcp_enabled: bool = True
+    #: Seconds a TCP connection may sit idle between queries.
+    tcp_idle_timeout: float = 10.0
+    #: Concurrent TCP connections; further ones are closed immediately.
+    tcp_max_connections: int = 64
     log_level: str = "INFO"
     log_file: str = ""               # empty means stdout only
 
@@ -186,6 +193,11 @@ class Settings:
             upstream_port=_int("DNSF_UPSTREAM_PORT", cls.upstream_port),
             upstream_timeout=_float("DNSF_UPSTREAM_TIMEOUT", cls.upstream_timeout),
             workers=_int("DNSF_WORKERS", cls.workers),
+            tcp_enabled=_bool("DNSF_TCP_ENABLED", cls.tcp_enabled),
+            tcp_idle_timeout=_float("DNSF_TCP_IDLE_TIMEOUT",
+                                    cls.tcp_idle_timeout),
+            tcp_max_connections=_int("DNSF_TCP_MAX_CONNECTIONS",
+                                     cls.tcp_max_connections),
             log_level=os.environ.get("DNSF_LOG_LEVEL", cls.log_level).upper(),
             log_file=os.environ.get("DNSF_LOG_FILE", cls.log_file),
             db_enabled=_bool("DNSF_DB_ENABLED", cls.db_enabled),
