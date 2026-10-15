@@ -1,0 +1,5 @@
+# Frozen research inputs: stored byte-for-byte, so the SHA-256 checksums
+# recorded in their metadata hold on every checkout and every OS.
+datasets/** -text
+resources/** -text
+models/** -text
