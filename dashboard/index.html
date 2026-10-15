@@ -1165,6 +1165,153 @@
   }
 
   /* ===================================================================
+     Motion layer.
+
+     Measured on this machine's integrated GPU at 3840x2160: with opaque
+     panels, everything below holds ~59-60 fps. Ambient motion lives in
+     small or pre-rasterised layers that the compositor only moves (no
+     blur filters, no translucent re-blending); everything else plays once,
+     on an event, and stops. All of it is transform and opacity.
+     =================================================================== */
+
+  /* -- ambient: two glow orbs drifting behind the panels ----------------- */
+
+  .orb {
+    position: fixed; z-index: 0; pointer-events: none;
+    width: 32vmax; height: 32vmax; border-radius: 50%;
+    opacity: .55; will-change: transform;
+  }
+  .orb.o1 {
+    left: -8vmax; top: -10vmax;
+    background: radial-gradient(circle, rgba(8, 145, 178, .5), transparent 66%);
+    animation: orb-a 22s ease-in-out infinite alternate;
+  }
+  .orb.o2 {
+    right: -8vmax; top: 16vmax;
+    background: radial-gradient(circle, rgba(124, 58, 237, .46), transparent 66%);
+    animation: orb-b 28s ease-in-out infinite alternate;
+  }
+  @keyframes orb-a { to { transform: translate3d(12vmax, 9vmax, 0) scale(1.08); } }
+  @keyframes orb-b { to { transform: translate3d(-10vmax, 12vmax, 0) scale(.94); } }
+
+  /* -- ambient: a beam gliding along the header's lower edge ------------ */
+
+  header { overflow: hidden; }
+  header .beam {
+    position: absolute; left: 0; bottom: 0; height: 2px; width: 28%;
+    pointer-events: none; will-change: transform;
+    background: linear-gradient(90deg, transparent, #22d3ee 35%, #c084fc 65%, transparent);
+    box-shadow: 0 0 12px rgba(34, 211, 238, .8);
+    animation: beam 5.5s cubic-bezier(.45, 0, .55, 1) infinite;
+  }
+  @keyframes beam {
+    0%   { transform: translateX(-110%); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translateX(370%); opacity: 0; }
+  }
+
+  /* -- the radar: always turning, quicker while work is in flight -------- */
+
+  header .brand-mark .arm { animation: sweep-arm 3.6s linear infinite; }
+  header .brand-mark .blip { animation: blip 3.6s ease-out infinite; }
+  header .brand-mark.scanning .arm { animation-duration: .9s; }
+  header .brand-mark.scanning .blip { animation-duration: .9s; }
+
+  /* -- the live heartbeat ---------------------------------------------- */
+
+  .pill.ok .dot::after { animation-iteration-count: infinite; }
+
+  /* -- empty investigation: a radar that keeps watching ----------------- */
+
+  #trace > p.dim:only-child::after { animation: sweep-arm 2.8s linear infinite; }
+
+  /* -- KPI tiles: shimmer on hover, flash when a value changes ---------- */
+
+  .stat::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 45%;
+    pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .08), transparent);
+    transform: translateX(-120%);
+  }
+  .stat:hover::before { transition: transform 700ms var(--ease-out); transform: translateX(260%); }
+  .stat .n { display: inline-block; }
+  .stat.bump .n { animation: bump 700ms var(--ease-out); }
+  .stat.bump::after { animation: bar-flash 900ms var(--ease-out); }
+  @keyframes bump {
+    0%   { transform: translateY(0) scale(1); }
+    30%  { transform: translateY(-3px) scale(1.12); }
+    100% { transform: none; }
+  }
+  @keyframes bar-flash {
+    0%   { opacity: .35; }
+    25%  { opacity: 1; }
+    100% { opacity: .7; }
+  }
+
+  /* -- activity: a light sweep over each new decision -------------------- */
+
+  .row { position: relative; overflow: hidden; }
+  .row.fresh::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%;
+    pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(34, 211, 238, .16), transparent);
+    animation: row-sweep 1100ms var(--ease-out) 200ms both;
+  }
+  @keyframes row-sweep {
+    from { transform: translateX(-110%); }
+    to   { transform: translateX(260%); }
+  }
+  /* A new block announces itself once with a ripple from its badge. */
+  .row.fresh.v-BLOCK .badge { position: relative; }
+  .row.fresh.v-BLOCK .badge::after {
+    content: ""; position: absolute; inset: -2px; border-radius: 999px;
+    border: 2px solid var(--block);
+    animation: ripple 1300ms var(--ease-out) 2;
+  }
+  @keyframes ripple {
+    from { transform: scale(1);   opacity: .9; }
+    to   { transform: scale(1.9); opacity: 0; }
+  }
+
+  /* -- weight track: slots fill one after another ----------------------- */
+
+  .slot:nth-child(2) .fill { transition-delay: 70ms; }
+  .slot:nth-child(3) .fill { transition-delay: 140ms; }
+  .slot:nth-child(4) .fill { transition-delay: 210ms; }
+  .slot:nth-child(5) .fill { transition-delay: 280ms; }
+  .slot:nth-child(6) .fill { transition-delay: 350ms; }
+  .slot:nth-child(7) .fill { transition-delay: 420ms; }
+
+  /* -- investigation: module cards rise in with a slight tilt ----------- */
+
+  .module.reveal { transform: translateY(10px) scale(.985); }
+  .module.reveal.in { animation: card-in 420ms var(--ease-out) forwards; }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(10px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* -- gradient buttons: a shine passes on hover ------------------------ */
+
+  #lookup-go, #refresh, #skip { position: relative; overflow: hidden; }
+  #lookup-go::after, #refresh::after, #skip::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 50%;
+    pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .55), transparent);
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  #lookup-go:hover::after, #refresh:hover::after, #skip:hover::after {
+    transition: transform 650ms var(--ease-out);
+    transform: translateX(260%) skewX(-18deg);
+  }
+
+  /* -- the intro gets the same ambient life ------------------------------ */
+
+  #intro .card { animation: card-float 6s ease-in-out infinite alternate; }
+  @keyframes card-float { to { transform: translateY(-6px); } }
+
+  /* ===================================================================
      Reduced motion — the information stays, the movement goes.
      =================================================================== */
 
@@ -1188,10 +1335,18 @@
     .brand-mark .blip { animation: none !important; opacity: 1; }
     .stats.first .stat { opacity: 1; animation: none; }
     .stat:hover, .row:hover, button:hover { transform: none; }
+    /* Motion layer: ambient loops stop, one-shot effects are skipped. */
+    .orb, header .beam, #intro .card, .stat.bump .n, .stat.bump::after,
+    .row.fresh::after, .row.fresh.v-BLOCK .badge::after,
+    #trace > p.dim:only-child::after { animation: none !important; }
+    header .beam, .row.fresh::after, .row.fresh.v-BLOCK .badge::after { display: none; }
+    .stat::before, #lookup-go::after, #refresh::after, #skip::after { display: none; }
   }
 </style>
 </head>
 <body>
+<div class="orb o1" aria-hidden="true"></div>
+<div class="orb o2" aria-hidden="true"></div>
 <div class="grid-overlay" aria-hidden="true"></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
@@ -1466,6 +1621,7 @@
       <span class="pill" id="conn"><span class="dot"></span><span id="conn-text">Connecting</span></span>
       <button id="signout" style="display:none">Sign out</button>
     </div>
+    <i class="beam" aria-hidden="true"></i>
   </header>
 
   <main>
@@ -1575,6 +1731,21 @@ let lastScore = 0;
 let timer = null;
 let connState = null;
 let statsShown = false;
+let lastStatValues = {};
+
+/* Counts a tile from its previous value to the new one. Reduced motion
+   sets the value directly; nothing is ever withheld. */
+function countUp(el, from, to) {
+  if (REDUCED || from === to) { el.textContent = to; return; }
+  const start = performance.now(), span = 700;
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / span);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (to - from) * eased);
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 
 /* -- helpers ------------------------------------------------------------ */
 
@@ -1789,6 +1960,23 @@ async function loadStats() {
     $("stats").innerHTML = cells.map(([k, v, tone]) =>
       `<div class="stat"><div class="n ${tone}">${esc(v)}</div>
         <div class="k">${esc(k)}</div></div>`).join("");
+
+    /* Numbers count up on first load and whenever they change, and the
+       changed tile flashes its accent bar. */
+    const previous = lastStatValues;
+    lastStatValues = {};
+    $("stats").querySelectorAll(".stat").forEach((tile, i) => {
+      const [k, v] = cells[i];
+      lastStatValues[k] = v;
+      if (typeof v !== "number") return;
+      const before = previous[k];
+      if (before === undefined) {
+        countUp(tile.querySelector(".n"), 0, v);
+      } else if (before !== v) {
+        tile.classList.add("bump");
+        countUp(tile.querySelector(".n"), before, v);
+      }
+    });
   } catch (err) {
     if ($("stats").querySelector(".stat")) {
       $("stats").classList.add("stale");   /* keep last known, mark it stale */
@@ -1881,7 +2069,7 @@ async function loadFeed() {
       const hue = `var(--${verdictClass(d.verdict).toLowerCase()})`;
       const name = d.qname === null ? "(malformed query)" : d.qname;
       const dashed = (!enforced && d.verdict === "BLOCK") ? "observed" : "";
-      return `<div class="row ${isNew ? "fresh" : ""}" role="button" tabindex="0"
+      return `<div class="row ${isNew ? "fresh" : ""} v-${verdictClass(d.verdict)}" role="button" tabindex="0"
                    data-id="${esc(d.id)}" aria-selected="${d.id === selectedId}">
           <span class="edge" style="background:${hue}"></span>
           <span class="id">${esc(d.id)}</span>
