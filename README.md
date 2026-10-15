@@ -1146,8 +1146,8 @@ the PSL algorithm over a pinned copy of the list
 `off` is the default and reproduces every earlier result; paper mode pins it.
 
 Measured on the real dataset (`real_eval_psl_full.json`, TI off): RDAP's
-detections are unchanged (recall 0.238), but 185 shared-platform rows move
-from a false "assessed, clean" to "cannot assess", so among the domains RDAP
+detections are unchanged (recall 0.238), but 170 malicious and 4 benign
+shared-platform rows move from a false "assessed, clean" to "cannot assess", so among the domains RDAP
 can judge it fires on 52.0% of malicious against 2.0% of benign. Typosquat
 keeps its 4 detections and loses its one false positive (`google.com.ph`).
 
