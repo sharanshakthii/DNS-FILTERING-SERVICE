@@ -1,0 +1,269 @@
+{
+  "dataset": "real_20261015.csv",
+  "collected_at": "2026-10-15T16:10:54.561819+00:00",
+  "files": {
+    "real_20261015.csv": "89e5a695e146686fa3233840591cc06060d61ffbebaba4c3383d5d8155e9169d",
+    "real_20261015.rdap.json": "bf6a090068dc56c8b9bb29b6f0302b82655a0bc45cbb400302aa23a974681a9c"
+  },
+  "tranco": {
+    "list_id": "N26XW",
+    "created_on": "2026-10-14T22:00:02.833418",
+    "providers": [
+      "crux",
+      "farsight",
+      "majestic",
+      "radar",
+      "umbrella"
+    ],
+    "url": "https://tranco-list.eu/top-1m.csv.zip"
+  },
+  "brands": [
+    "google",
+    "paypal",
+    "microsoft",
+    "apple",
+    "amazon",
+    "facebook",
+    "instagram",
+    "netflix",
+    "linkedin",
+    "github"
+  ],
+  "official_domains": [
+    "google.com",
+    "paypal.com",
+    "microsoft.com",
+    "apple.com",
+    "amazon.com",
+    "facebook.com",
+    "instagram.com",
+    "netflix.com",
+    "linkedin.com",
+    "github.com"
+  ],
+  "aggregator": "RiskAggregator() shipped defaults: weighted mean, flag 0.5, block 0.8, unlisted weight 0.5",
+  "positive_verdicts": [
+    "FLAG",
+    "BLOCK"
+  ],
+  "caveat": "Malicious labels are live feed listings and benign labels are Tranco ranks: real domains, but asserted labels rather than verified ground truth. All arms run with threat intelligence off, because the malicious rows were drawn from the feeds and TI would catch them by construction. nrd and beaconing are not evaluated: they need query history and timing, which a list of names does not contain. Registration ages are measured at collection time, after listing; at first sighting a domain was younger, so rdap figures are, if anything, conservative. The DGA artifact's largest coefficient is label_count, so it fires on almost any name with three or more labels; see dga_by_label_count before crediting it with any detection.",
+  "psl_mode": "full",
+  "arms": {
+    "only_dga": {
+      "modules": [
+        "dga"
+      ],
+      "true_positive": 354,
+      "false_positive": 89,
+      "true_negative": 411,
+      "false_negative": 146,
+      "total": 1000,
+      "predicted_positive": 443,
+      "accuracy": 0.765,
+      "precision": 0.7991,
+      "recall": 0.708,
+      "f1": 0.7508,
+      "false_positive_rate": 0.178,
+      "false_negative_rate": 0.292,
+      "unknown": 0
+    },
+    "only_typosquat": {
+      "modules": [
+        "typosquat"
+      ],
+      "true_positive": 4,
+      "false_positive": 0,
+      "true_negative": 500,
+      "false_negative": 496,
+      "total": 1000,
+      "predicted_positive": 4,
+      "accuracy": 0.504,
+      "precision": 1.0,
+      "recall": 0.008,
+      "f1": 0.0159,
+      "false_positive_rate": 0.0,
+      "false_negative_rate": 0.992,
+      "unknown": 0
+    },
+    "only_rdap": {
+      "modules": [
+        "rdap"
+      ],
+      "true_positive": 119,
+      "false_positive": 7,
+      "true_negative": 493,
+      "false_negative": 381,
+      "total": 1000,
+      "predicted_positive": 126,
+      "accuracy": 0.612,
+      "precision": 0.9444,
+      "recall": 0.238,
+      "f1": 0.3802,
+      "false_positive_rate": 0.014,
+      "false_negative_rate": 0.762,
+      "unknown": 414
+    },
+    "lexical_dga_typosquat": {
+      "modules": [
+        "dga",
+        "typosquat"
+      ],
+      "true_positive": 26,
+      "false_positive": 1,
+      "true_negative": 499,
+      "false_negative": 474,
+      "total": 1000,
+      "predicted_positive": 27,
+      "accuracy": 0.525,
+      "precision": 0.963,
+      "recall": 0.052,
+      "f1": 0.0987,
+      "false_positive_rate": 0.002,
+      "false_negative_rate": 0.948,
+      "unknown": 0
+    },
+    "all_heuristics": {
+      "modules": [
+        "dga",
+        "typosquat",
+        "rdap"
+      ],
+      "true_positive": 60,
+      "false_positive": 1,
+      "true_negative": 499,
+      "false_negative": 440,
+      "total": 1000,
+      "predicted_positive": 61,
+      "accuracy": 0.559,
+      "precision": 0.9836,
+      "recall": 0.12,
+      "f1": 0.2139,
+      "false_positive_rate": 0.002,
+      "false_negative_rate": 0.88,
+      "unknown": 0
+    }
+  },
+  "modules": {
+    "dga": {
+      "malicious": {
+        "rows": 500,
+        "assessed": 500,
+        "fired": 354,
+        "fire_rate": 0.708,
+        "mean_score": 0.6713
+      },
+      "benign": {
+        "rows": 500,
+        "assessed": 500,
+        "fired": 89,
+        "fire_rate": 0.178,
+        "mean_score": 0.1664
+      }
+    },
+    "typosquat": {
+      "malicious": {
+        "rows": 500,
+        "assessed": 500,
+        "fired": 4,
+        "fire_rate": 0.008,
+        "mean_score": 0.0066
+      },
+      "benign": {
+        "rows": 500,
+        "assessed": 500,
+        "fired": 0,
+        "fire_rate": 0.0,
+        "mean_score": 0.0016
+      }
+    },
+    "rdap": {
+      "malicious": {
+        "rows": 500,
+        "assessed": 229,
+        "fired": 119,
+        "fire_rate": 0.5197,
+        "mean_score": 0.4259
+      },
+      "benign": {
+        "rows": 500,
+        "assessed": 357,
+        "fired": 7,
+        "fire_rate": 0.0196,
+        "mean_score": 0.0221
+      }
+    }
+  },
+  "dga_by_label_count": {
+    "malicious_two_labels": {
+      "rows": 176,
+      "fired": 30,
+      "fire_rate": 0.1705
+    },
+    "malicious_three_plus_labels": {
+      "rows": 324,
+      "fired": 324,
+      "fire_rate": 1.0
+    },
+    "benign_two_labels": {
+      "rows": 449,
+      "fired": 38,
+      "fire_rate": 0.0846
+    },
+    "benign_three_plus_labels": {
+      "rows": 51,
+      "fired": 51,
+      "fire_rate": 1.0
+    }
+  },
+  "by_source_all_heuristics": {
+    "openphish": {
+      "rows": 100,
+      "positive": 8,
+      "rate": 0.08
+    },
+    "phishing-army": {
+      "rows": 100,
+      "positive": 24,
+      "rate": 0.24
+    },
+    "phishing-domains": {
+      "rows": 100,
+      "positive": 8,
+      "rate": 0.08
+    },
+    "phishing-filter": {
+      "rows": 100,
+      "positive": 9,
+      "rate": 0.09
+    },
+    "tranco_10k_100k": {
+      "rows": 250,
+      "positive": 1,
+      "rate": 0.004
+    },
+    "tranco_top10k": {
+      "rows": 250,
+      "positive": 0,
+      "rate": 0.0
+    },
+    "urlhaus-filter": {
+      "rows": 100,
+      "positive": 11,
+      "rate": 0.11
+    }
+  },
+  "shared_platform_malicious": {
+    "rows": 213,
+    "caught_all_heuristics": 8
+  },
+  "ti_on_benign": {
+    "rows": 500,
+    "listed": 0,
+    "false_positive_rate": 0.0,
+    "listed_domains": []
+  },
+  "rdap_coverage": {
+    "lookups": 865,
+    "with_date": 607
+  }
+}

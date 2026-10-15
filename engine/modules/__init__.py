@@ -9,7 +9,8 @@ from .base import DetectionModule, ModuleResult, ModuleScore, QueryContext
 from .beaconing import BeaconingModule, InsufficientObservations
 from .dga import DGAModule, ModelUnavailable
 from .nrd import NewDomainModule
-from .rdap import RdapAgeModule, RegistrationPending, RegistrationUnknown
+from .rdap import (RdapAgeModule, RegistrationPending, RegistrationShared,
+                   RegistrationUnknown)
 from .null import FixedScoreModule, NullModule
 from .ti import FeedUnavailable, ThreatIntelModule
 from .typosquat import BrandsUnavailable, TyposquatModule
@@ -40,6 +41,7 @@ __all__ = [
     "BeaconingModule",
     "RdapAgeModule",
     "RegistrationPending",
+    "RegistrationShared",
     "RegistrationUnknown",
     "InsufficientObservations",
     "ModelUnavailable",

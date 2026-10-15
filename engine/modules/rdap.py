@@ -65,6 +65,16 @@ class RegistrationUnknown(ModuleUnavailable):
     """The registry did not supply a registration date for this domain."""
 
 
+class RegistrationShared(ModuleUnavailable):
+    """The name is a site on a shared hosting platform (PSL private section).
+
+    Its only registration is the platform's — `pages.dev` was registered
+    years ago by its operator — so a registration age would describe the
+    platform, not this site. Scoring that as 0.0 claimed a clean assessment
+    that never happened; this says "cannot assess" instead.
+    """
+
+
 class RdapAgeModule(DetectionModule):
     """Scores a domain by how recently it was registered."""
 
@@ -78,7 +88,8 @@ class RdapAgeModule(DetectionModule):
                  ok_ttl_s: float = 7 * 24 * 3600.0,
                  fail_ttl_s: float = 3600.0,
                  workers: int = 2,
-                 fetch=None) -> None:
+                 fetch=None,
+                 psl_mode: str = "off") -> None:
         """`fetch(domain) -> float | None` replaces the network in tests.
 
         It returns a registration timestamp, None when the registry has no
@@ -94,6 +105,8 @@ class RdapAgeModule(DetectionModule):
         self.ok_ttl_s = ok_ttl_s
         self.fail_ttl_s = fail_ttl_s
         self._fetch = fetch or self.fetch_registration
+        from feeds.psl import check_mode
+        self.psl_mode = check_mode(psl_mode)
 
         # domain -> (registered_ts | None, cached_at, error | None)
         self._cache: OrderedDict[str, tuple] = OrderedDict()
@@ -109,6 +122,7 @@ class RdapAgeModule(DetectionModule):
             new_within_s=settings.rdap_new_within_s,
             established_after_s=settings.rdap_established_after_s,
             timeout_s=settings.rdap_timeout_s,
+            psl_mode=getattr(settings, "psl_mode", "off"),
         )
 
     # -- scoring -----------------------------------------------------------
@@ -123,10 +137,17 @@ class RdapAgeModule(DetectionModule):
         return round(1.0 - (age_s - self.new_within_s) / span, 6)
 
     def evaluate(self, ctx: QueryContext) -> ModuleScore:
-        registrable = self._registrable(ctx.qname)
+        registrable = self._registration(ctx.qname)
         if registrable is None:
             raise RegistrationUnknown(
                 f"{ctx.qname} is not a publicly registrable name")
+        if self.psl_mode == "full":
+            from feeds.psl import on_shared_platform, public_suffix
+            if on_shared_platform(ctx.qname):
+                raise RegistrationShared(
+                    f"{ctx.qname} is hosted on the shared platform "
+                    f"{public_suffix(ctx.qname)}; its registration age "
+                    f"belongs to the platform, not this site")
 
         now = ctx.timestamp
         entry = self._cached(registrable, now)
@@ -239,6 +260,20 @@ class RdapAgeModule(DetectionModule):
                     return True
             time.sleep(0.01)
         return False
+
+    def _registration(self, qname: str) -> str | None:
+        """The domain a registry holds a record for.
+
+        With the PSL off: the last-two-labels approximation. Otherwise the
+        ICANN registrable domain, in both `icann` and `full` mode — RDAP
+        records exist only at that level, so `local.gov.uk` is looked up
+        rather than the suffix `gov.uk`.
+        """
+        legacy = self._registrable(qname)
+        if self.psl_mode == "off" or legacy is None:
+            return legacy
+        from feeds.psl import registrable_domain
+        return registrable_domain(qname, private=False)
 
     @staticmethod
     def _registrable(qname: str) -> str | None:

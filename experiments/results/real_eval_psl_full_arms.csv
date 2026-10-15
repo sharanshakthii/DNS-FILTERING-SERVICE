@@ -1,0 +1,6 @@
+arm,modules,precision,recall,f1,false_positive_rate,true_positive,false_positive,true_negative,false_negative,unknown
+only_dga,dga,0.7991,0.708,0.7508,0.178,354,89,411,146,0
+only_typosquat,typosquat,1.0,0.008,0.0159,0.0,4,0,500,496,0
+only_rdap,rdap,0.9444,0.238,0.3802,0.014,119,7,493,381,414
+lexical_dga_typosquat,dga+typosquat,0.963,0.052,0.0987,0.002,26,1,499,474,0
+all_heuristics,dga+typosquat+rdap,0.9836,0.12,0.2139,0.002,60,1,499,440,0

@@ -48,7 +48,8 @@ class NewDomainModule(DetectionModule):
                  nrd_list: IndicatorCache | None = None,
                  new_within_s: float = DEFAULT_NEW_WITHIN_S,
                  established_after_s: float = DEFAULT_ESTABLISHED_AFTER_S,
-                 list_score: float = 1.0) -> None:
+                 list_score: float = 1.0,
+                 psl_mode: str = "off") -> None:
         if established_after_s <= new_within_s:
             raise ValueError(
                 "established_after_s must exceed new_within_s; otherwise the "
@@ -58,6 +59,8 @@ class NewDomainModule(DetectionModule):
         self.new_within_s = new_within_s
         self.established_after_s = established_after_s
         self.list_score = list_score
+        from feeds.psl import check_mode
+        self.psl_mode = check_mode(psl_mode)
 
     @classmethod
     def from_settings(cls, settings) -> "NewDomainModule":
@@ -68,6 +71,7 @@ class NewDomainModule(DetectionModule):
             nrd_list=build_nrd_cache(settings),
             new_within_s=settings.nrd_new_within_s,
             established_after_s=settings.nrd_established_after_s,
+            psl_mode=getattr(settings, "psl_mode", "off"),
         )
 
     # -- scoring -----------------------------------------------------------
@@ -89,7 +93,7 @@ class NewDomainModule(DetectionModule):
 
     def evaluate(self, ctx: QueryContext) -> ModuleScore:
         now = ctx.timestamp
-        registrable = self._registrable(ctx.qname)
+        registrable = self._site(ctx.qname)
 
         # An external list, when configured, is a registry-derived fact and
         # outranks our own observation.
@@ -139,6 +143,17 @@ class NewDomainModule(DetectionModule):
     def _observe(self, domain: str, now: float) -> tuple[float, bool]:
         first_seen_ts, is_first = self.first_seen.observe(domain, now=now)
         return now - first_seen_ts, is_first
+
+    def _site(self, qname: str) -> str:
+        """`_registrable` when the PSL is off; the PSL site otherwise.
+
+        With the PSL on, each customer of a shared platform is its own site,
+        so `new.pages.dev` is new even though `pages.dev` is not.
+        """
+        if self.psl_mode == "off":
+            return self._registrable(qname)
+        from feeds.psl import site_for
+        return site_for(qname, self.psl_mode)
 
     @staticmethod
     def _registrable(qname: str) -> str:

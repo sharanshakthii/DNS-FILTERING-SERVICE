@@ -145,6 +145,11 @@ class Settings:
     rdap_established_after_s: float = 365 * 24 * 3600.0
     rdap_timeout_s: float = 6.0
 
+    # -- public suffix list -------------------------------------------------
+    #: off | icann | full. `off` keeps the last-two-labels approximation every
+    #: earlier result was produced with; paper mode pins it. See feeds/psl.py.
+    psl_mode: str = "off"
+
     # -- operator allowlist ------------------------------------------------
     #: Comma-separated domains that are always ALLOW (a name and everything
     #: beneath it). The false-positive override; see engine/allowlist.py.
@@ -268,6 +273,7 @@ class Settings:
             rdap_established_after_s=_float("DNSF_RDAP_ESTABLISHED_AFTER_S",
                                             cls.rdap_established_after_s),
             rdap_timeout_s=_float("DNSF_RDAP_TIMEOUT_S", cls.rdap_timeout_s),
+            psl_mode=os.environ.get("DNSF_PSL_MODE", cls.psl_mode).lower(),
             allowlist=os.environ.get("DNSF_ALLOWLIST", cls.allowlist),
             allowlist_file=os.environ.get("DNSF_ALLOWLIST_FILE",
                                           cls.allowlist_file),

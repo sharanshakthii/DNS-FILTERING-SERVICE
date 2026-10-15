@@ -50,12 +50,17 @@ class IndicatorCache:
     """Holds the current indicator set for one or more feeds."""
 
     def __init__(self, match_parents: bool = True,
-                 min_parent_labels: int = MIN_PARENT_LABELS) -> None:
+                 min_parent_labels: int = MIN_PARENT_LABELS,
+                 psl_mode: str = "off") -> None:
         self._lock = threading.RLock()
         self._domains: dict[str, str] = {}     # domain -> feed name
         self._snapshots: dict[str, FeedSnapshot] = {}
         self.match_parents = match_parents
         self.min_parent_labels = min_parent_labels
+        #: With the PSL on, a parent match never climbs to a public suffix:
+        #: a feed listing `pages.dev` must not match every site hosted there.
+        from .psl import check_mode
+        self.psl_mode = check_mode(psl_mode)
 
     # -- population --------------------------------------------------------
 
@@ -120,11 +125,18 @@ class IndicatorCache:
             # Start one label in; stop before going shorter than the floor.
             for i in range(1, len(labels) - self.min_parent_labels + 1):
                 parent = ".".join(labels[i:])
+                if self.psl_mode != "off" and self._is_suffix(parent):
+                    break
                 feed = self._domains.get(parent)
                 if feed is not None:
                     return Match(indicator=parent, feed=feed,
                                  match_type="parent")
         return None
+
+    def _is_suffix(self, name: str) -> bool:
+        from .psl import registrable_domain
+        return registrable_domain(name,
+                                  private=(self.psl_mode == "full")) is None
 
     def __contains__(self, qname: str) -> bool:
         return self.lookup(qname) is not None

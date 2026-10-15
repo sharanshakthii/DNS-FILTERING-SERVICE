@@ -54,6 +54,9 @@ def main() -> int:
     parser.add_argument("--brands", default=DEFAULT_BRANDS)
     parser.add_argument("--model", default=str(ROOT / "models/dga/dga_model.json"))
     parser.add_argument("--out", type=Path, default=ROOT / "experiments/results")
+    parser.add_argument("--psl-mode", default="off",
+                        choices=["off", "icann", "full"],
+                        help="off reproduces the published results file")
     args = parser.parse_args()
 
     # A row with no RDAP date is UNKNOWN in the rdap-only arm by design; the
@@ -70,10 +73,28 @@ def main() -> int:
             raise SystemExit(f"{name} does not match the checksum in its "
                              f"metadata; refusing to evaluate a modified set")
 
+    if args.psl_mode != "off":
+        # PSL registrations missing from the original collection live in a
+        # separate top-up file, verified the same way.
+        stem = path.name[:-len(".csv")]
+        topup_meta = path.parent / f"{stem}.rdap_psl.meta.json"
+        if not topup_meta.exists():
+            raise SystemExit(f"--psl-mode {args.psl_mode} needs "
+                             f"{stem}.rdap_psl.json; run tools/make_real_dataset.py "
+                             f"--topup-rdap {path}")
+        tmeta = json.loads(topup_meta.read_text(encoding="utf-8"))
+        for name, digest in tmeta["files"].items():
+            if hashlib.sha256((path.parent / name).read_bytes()).hexdigest() != digest:
+                raise SystemExit(f"{name} does not match its checksum")
+        topup = json.loads((path.parent / f"{stem}.rdap_psl.json")
+                           .read_text(encoding="utf-8"))
+        rdap = {**topup, **rdap}
+
     brands = [b.strip() for b in args.brands.split(",") if b.strip()]
     official = [f"{b}.com" for b in brands]
     result = evaluate(rows, rdap, meta, brands=brands, official=official,
-                      dga_model_path=args.model)
+                      dga_model_path=args.model, psl_mode=args.psl_mode)
+    suffix = "" if args.psl_mode == "off" else f"_psl_{args.psl_mode}"
 
     report = {"dataset": path.name, "collected_at": meta["collected_at"],
               "files": meta["files"], "tranco": meta["tranco"],
@@ -84,9 +105,9 @@ def main() -> int:
               "caveat": CAVEAT, **result}
 
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / "real_eval.json").write_text(json.dumps(report, indent=2),
+    (args.out / f"real_eval{suffix}.json").write_text(json.dumps(report, indent=2),
                                              encoding="utf-8")
-    with (args.out / "real_eval_arms.csv").open("w", newline="",
+    with (args.out / f"real_eval{suffix}_arms.csv").open("w", newline="",
                                                  encoding="utf-8") as f:
         fields = ["arm", "modules", "precision", "recall", "f1",
                   "false_positive_rate", "true_positive", "false_positive",
@@ -124,7 +145,7 @@ def main() -> int:
     print("\nall_heuristics recall by source:")
     for source, s in result["by_source_all_heuristics"].items():
         print(f"  {source:18} {s['positive']:>4}/{s['rows']:<4} ({s['rate']:.1%})")
-    print(f"\nwrote {args.out / 'real_eval.json'}")
+    print(f"\nwrote {args.out / f'real_eval{suffix}.json'}")
     return 0
 
 

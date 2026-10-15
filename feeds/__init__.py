@@ -52,6 +52,7 @@ def build_manager_from_settings(manager_settings) -> FeedManager:
     """
     cache = IndicatorCache(
         match_parents=manager_settings.feed_match_parents,
+        psl_mode=getattr(manager_settings, "psl_mode", "off"),
     )
 
     if manager_settings.feed_file:

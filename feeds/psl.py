@@ -137,6 +137,33 @@ def registrable_label(name: str, private: bool = True) -> str:
     return domain.split(".", 1)[0]
 
 
+#: off   legacy last-two-labels approximation (every result before the PSL)
+#: icann ICANN section only
+#: full  ICANN and PRIVATE sections
+MODES = ("off", "icann", "full")
+
+
+def check_mode(mode: str) -> str:
+    if mode not in MODES:
+        raise ValueError(f"psl mode must be one of {MODES}, got {mode!r}")
+    return mode
+
+
+def site_for(name: str, mode: str) -> str:
+    """The domain a name belongs to, under `mode`.
+
+    `off` reproduces the old approximation exactly, including its result for
+    a single-label name, so modules built with the default are unchanged.
+    A name that is itself a public suffix is returned whole.
+    """
+    cleaned = (name or "").strip().lower().rstrip(".")
+    if mode == "off":
+        labels = cleaned.split(".")
+        return ".".join(labels[-2:]) if len(labels) >= 2 else cleaned
+    domain = registrable_domain(cleaned, private=(mode == "full"))
+    return domain if domain is not None else cleaned
+
+
 def on_shared_platform(name: str) -> bool:
     """True when `name` sits under a PRIVATE-section suffix (a hosting
     platform), so its ICANN registration belongs to the platform."""

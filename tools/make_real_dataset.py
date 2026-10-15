@@ -181,6 +181,44 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def topup_rdap(csv_path: Path, workers: int) -> int:
+    """Add RDAP answers for the ICANN registrations the PSL identifies.
+
+    The original collection keyed lookups by the last two labels, so a name
+    under `gov.uk` was looked up as `gov.uk`. Evaluating with the PSL needs
+    `local.gov.uk` instead. The answers go to a separate file with its own
+    checksum; the frozen originals are never rewritten. A registration date
+    does not change, so a later lookup is valid for the original rows.
+    """
+    from feeds.psl import registrable_domain
+
+    stem = csv_path.name[:-len(".csv")]
+    base = json.loads((csv_path.parent / f"{stem}.rdap.json")
+                      .read_text(encoding="utf-8"))
+    with csv_path.open(encoding="utf-8") as f:
+        names = [r["domain"] for r in csv.DictReader(f)]
+    wanted = sorted({d for d in (registrable_domain(n, private=False)
+                                 for n in names) if d} - set(base))
+    print(f"top-up: {len(wanted)} ICANN registrations not in {stem}.rdap.json")
+    answers = collect_rdap(wanted, workers)
+
+    out = csv_path.parent / f"{stem}.rdap_psl.json"
+    out.write_text(json.dumps(answers, indent=1, sort_keys=True),
+                   encoding="utf-8")
+    from feeds import psl
+    meta = {"collected_at": datetime.now(timezone.utc).isoformat(),
+            "extends": f"{stem}.rdap.json",
+            "psl_version": psl.version(),
+            "lookups": len(answers),
+            "with_registration_date": sum(1 for v in answers.values()
+                                          if v["registered"] is not None),
+            "files": {out.name: sha256(out)}}
+    (csv_path.parent / f"{stem}.rdap_psl.meta.json").write_text(
+        json.dumps(meta, indent=2), encoding="utf-8")
+    print(f"wrote {out.name}: {meta['with_registration_date']}/{len(answers)} dated")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--per-feed", type=int, default=100)
@@ -188,7 +226,12 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--out", default=str(ROOT / "datasets"))
+    parser.add_argument("--topup-rdap", type=Path, metavar="CSV",
+                        help="add PSL registrations to an existing dataset")
     args = parser.parse_args()
+
+    if args.topup_rdap:
+        return topup_rdap(args.topup_rdap, args.workers)
 
     collected_at = datetime.now(timezone.utc)
     stem = f"real_{collected_at:%Y%m%d}"

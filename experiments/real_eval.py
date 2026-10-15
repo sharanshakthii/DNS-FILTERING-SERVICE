@@ -84,26 +84,29 @@ def load(csv_path: Path) -> tuple[list[RealRow], dict, dict]:
 
 
 def build_modules(rdap: dict, collected_ts: float, brands: list[str],
-                  official: list[str], dga_model_path: str) -> dict:
+                  official: list[str], dga_model_path: str,
+                  psl_mode: str = "off") -> dict:
     """The real modules, with RDAP answered from the frozen lookups."""
     rdap_module = RdapAgeModule(fetch=lambda d: (_ for _ in ()).throw(
-        RuntimeError(f"{d} missing from the frozen RDAP file")))
+        RuntimeError(f"{d} missing from the frozen RDAP file")),
+        psl_mode=psl_mode)
     for domain, answer in rdap.items():
         rdap_module.preload(domain, answer.get("registered"),
                             answer.get("error"), cached_at=collected_ts)
     return {
         "dga": DGAModule(model_path=dga_model_path),
-        "typosquat": TyposquatModule(brands=brands, official_domains=official),
+        "typosquat": TyposquatModule(brands=brands, official_domains=official,
+                                     psl_mode=psl_mode),
         "rdap": rdap_module,
     }
 
 
 def evaluate(rows: list[RealRow], rdap: dict, meta: dict, *,
              brands: list[str], official: list[str],
-             dga_model_path: str) -> dict:
+             dga_model_path: str, psl_mode: str = "off") -> dict:
     collected_ts = datetime.fromisoformat(meta["collected_at"]).timestamp()
     modules = build_modules(rdap, collected_ts, brands, official,
-                            dga_model_path)
+                            dga_model_path, psl_mode)
     ctxs = [QueryContext(qname=r.domain, qtype="A", client_id="eval",
                          timestamp=collected_ts) for r in rows]
 
@@ -174,6 +177,7 @@ def evaluate(rows: list[RealRow], rdap: dict, meta: dict, *,
     benign = [r for r in rows if r.label == 0]
     ti_fp = [r for r in benign if r.ti_listed]
     return {
+        "psl_mode": psl_mode,
         "arms": arms,
         "modules": module_table,
         "dga_by_label_count": dga_split,

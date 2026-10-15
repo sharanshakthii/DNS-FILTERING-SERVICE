@@ -1,0 +1,10 @@
+{
+  "collected_at": "2026-10-15T17:23:09.339091+00:00",
+  "extends": "real_20261015.rdap.json",
+  "psl_version": "2026-10-07_07-28-19_UTC",
+  "lookups": 71,
+  "with_registration_date": 30,
+  "files": {
+    "real_20261015.rdap_psl.json": "37ab6bcf0682b240d1e1235fef5561ab309bc7d548b3d54184f7a0bc56b35dbf"
+  }
+}

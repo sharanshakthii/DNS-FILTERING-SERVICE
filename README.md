@@ -144,6 +144,7 @@ Configuration is by environment variable:
 | `DNSF_RDAP_NEW_WITHIN_S` | `2592000` | Registered within 30 days scores 1.0 |
 | `DNSF_RDAP_ESTABLISHED_AFTER_S` | `31536000` | Registered over a year ago scores 0.0 |
 | `DNSF_RDAP_TIMEOUT_S` | `6.0` | Per-lookup timeout (background, never on the query path) |
+| `DNSF_PSL_MODE` | `off` | `off` (last two labels, as published), `icann`, or `full` (incl. hosting platforms) |
 | `DNSF_ALLOWLIST` | *(empty)* | Comma-separated domains always allowed, with subdomains |
 | `DNSF_ALLOWLIST_FILE` | *(unset)* | Same, one domain per line, `#` comments allowed |
 
@@ -1123,6 +1124,32 @@ registration date; the evidence carries `age_source: "rdap"`.
   `.lan`, `.home`, `.test`, …) and IP literals are never sent.
 - A recent registration is a risk signal, not proof: new legitimate sites
   exist. `rdap` takes the 0.5 unlisted-module weight.
+
+### Public Suffix List (`DNSF_PSL_MODE`)
+
+Every module used to reduce a name to its last two labels, which is wrong
+under multi-label suffixes (`x.co.uk` became `co.uk`) and on hosting
+platforms (`site.pages.dev` became `pages.dev`). `feeds/psl.py` implements
+the PSL algorithm over a pinned copy of the list
+(`resources/public_suffix_list.dat`, version 2026-10-07, MPL-2.0). With
+`full` (live mode):
+
+- **typosquat** analyses the label the site owner chose; a brand inside a
+  site name on a shared platform keeps the 0.6 it had before.
+- **TI** parent matching never climbs to a public suffix, so a listed
+  `pages.dev` cannot block every site hosted there.
+- **nrd** tracks first-seen per site.
+- **rdap** looks up the ICANN registration (`local.gov.uk`, not `gov.uk`),
+  and for a site on a shared platform reports `RegistrationShared` —
+  cannot assess — instead of the platform's age scored as clean.
+
+`off` is the default and reproduces every earlier result; paper mode pins it.
+
+Measured on the real dataset (`real_eval_psl_full.json`, TI off): RDAP's
+detections are unchanged (recall 0.238), but 185 shared-platform rows move
+from a false "assessed, clean" to "cannot assess", so among the domains RDAP
+can judge it fires on 52.0% of malicious against 2.0% of benign. Typosquat
+keeps its 4 detections and loses its one false positive (`google.com.ph`).
 
 ### Allowlist
 

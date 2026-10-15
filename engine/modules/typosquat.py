@@ -180,9 +180,12 @@ class TyposquatModule(DetectionModule):
 
     def __init__(self, brands: list[str] | None = None,
                  official_domains: list[str] | None = None,
-                 keywords: list[str] | None = None) -> None:
+                 keywords: list[str] | None = None,
+                 psl_mode: str = "off") -> None:
         self.brands = [b for b in (brands or []) if b]
         self.official_domains = set(official_domains or [])
+        from feeds.psl import check_mode
+        self.psl_mode = check_mode(psl_mode)
         self.keywords = set(keywords if keywords is not None
                             else parse_list(DEFAULT_KEYWORDS))
 
@@ -192,6 +195,7 @@ class TyposquatModule(DetectionModule):
             brands=parse_list(settings.typosquat_brands),
             official_domains=parse_list(settings.typosquat_official_domains),
             keywords=parse_list(settings.typosquat_keywords),
+            psl_mode=getattr(settings, "psl_mode", "off"),
         )
 
     # -- helpers -----------------------------------------------------------
@@ -224,7 +228,11 @@ class TyposquatModule(DetectionModule):
                                      "brands_configured": len(self.brands)})
 
         raw_labels = qname.split(".")
-        registrable = self.registrable(qname)
+        if self.psl_mode == "off":
+            registrable = self.registrable(qname)
+        else:
+            from feeds.psl import site_for
+            registrable = site_for(qname, self.psl_mode)
         reg_label = registrable.split(".")[0] if registrable else ""
 
         decoded_labels, punycode = [], False
@@ -293,9 +301,27 @@ class TyposquatModule(DetectionModule):
         # The brand's own registration under a different suffix is not a
         # near-miss spelling, but it is still worth reporting rather than
         # silently scoring zero.
+        # With the PSL on, `paypal.pages.dev` or `paypal-help.blogspot.com`
+        # has a site label containing the brand, but it is a site on a shared
+        # platform, not a registration of the brand's. It keeps the score the
+        # old approximation gave these names (brand in a subdomain of an
+        # unrelated registration), so the PSL never weakens this detection.
+        shared = False
+        if self.psl_mode == "full" and brand in reg_label:
+            from feeds.psl import on_shared_platform
+            shared = on_shared_platform(registrable)
+        if shared:
+            signals.append({
+                "name": "brand_on_shared_platform",
+                "score": self.SCORE_SUBDOMAIN_BRAND,
+                "reason": "the brand appears in a site name on a shared "
+                          "hosting platform, not the brand's own registration",
+            })
+
         if reg_label == brand:
-            if keyword is None:
+            if keyword is None and not shared:
                 return None
+        if reg_label == brand and keyword is not None:
             signals.append({
                 "name": "brand_with_keyword",
                 "score": self.SCORE_BRAND_KEYWORD,
@@ -346,7 +372,9 @@ class TyposquatModule(DetectionModule):
 
         # The brand appearing to the left of an unrelated registration is the
         # classic "login.brand.attacker.example" pattern.
-        subdomain_labels = labels[:-2] if len(labels) > 2 else []
+        site_labels = len(registrable.split(".")) if registrable else 0
+        subdomain_labels = (labels[:-site_labels]
+                            if len(labels) > site_labels else [])
         if (registrable not in self.official_domains
                 and reg_label != brand
                 and any(brand in label for label in subdomain_labels)):
