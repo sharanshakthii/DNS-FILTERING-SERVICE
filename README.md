@@ -177,8 +177,8 @@ retrofitted later.
 python -m pytest tests/ -q
 ```
 
-Expected: **976 passed, 2 skipped** (the paper's 938, plus 29 in
-`test_improvements.py` and 9 in `test_real_eval.py`).
+Expected: **1066 passed, 2 skipped** (the paper's 938, plus the 128 added
+since: see the last six rows of the table).
 
 | File | Tests | Covers |
 |---|---|---|
@@ -206,6 +206,10 @@ Expected: **976 passed, 2 skipped** (the paper's 938, plus 29 in
 | `test_latency.py` | 26 | Percentiles, warm-up, phase collection, runner shape |
 | `test_improvements.py` | 29 | RDAP age, allowlist, device alerts, extra feeds, decisive TI |
 | `test_real_eval.py` | 9 | Real-data evaluator, checksum refusal, collection-time ages |
+| `test_psl.py` | 38 | Public Suffix List algorithm, incl. the PSL project's own vectors |
+| `test_psl_modes.py` | 23 | `DNSF_PSL_MODE` in typosquat, TI, nrd and rdap; `off` unchanged |
+| `test_tcp.py` | 16 | DNS over TCP both ways, TC fallback, UDP size limit, connection limits |
+| `test_dga_v2.py` | 13 | DGA v2 features, depth invariance, v1 still the published model |
 
 No internet access required — a stub upstream runs on loopback.
 
@@ -583,6 +587,13 @@ existing aggregation defaults, which Stage 12 has no evidence to justify. A
 consequence worth knowing: running `ti,typosquat` with default weights, a
 typosquat score of 0.75 against a TI score of 0.0 aggregates to 0.25 and does
 not reach FLAG. Use `DNSF_AGGREGATOR_WEIGHTS` to change that deliberately.
+
+**A look-alike character combined with an extra word is not caught.**
+`paypa1.com` (confusable) and `paypal-login.com` (brand + keyword) each
+score, but `paypa1-login.com` scores 0.0: the confusable check compares the
+whole label to the brand, and the keyword check needs the brand spelled
+correctly. Found during a pre-release check; left unchanged so the module
+still matches the published evaluation.
 
 **Same public-suffix approximation** as the other modules: the registrable
 domain is the last two labels, so a name under `co.uk` is measured against
@@ -1176,6 +1187,21 @@ shared-platform rows move from a false "assessed, clean" to "cannot assess", so 
 can judge it fires on 52.0% of malicious against 2.0% of benign. Typosquat
 keeps its 4 detections and loses its one false positive (`google.com.ph`).
 
+### Sign-in intro
+
+`/login` opens with a short animated intro (the team image, "DNS FILTERING
+SERVICE", an "Enter Securely" button) that slides up to reveal the
+unchanged sign-in form. It is four marked blocks in `dashboard/login.html`
+(`PRJ intro (1/4)`…`(4/4)`); the form and its script are untouched. The
+image is embedded as a data URI because the API serves only its two HTML
+routes; the source is `dashboard/assets/intro-team.jpg`.
+
+It is shown only when JavaScript runs, can be skipped with **Skip intro** or
+Escape, plays without motion under `prefers-reduced-motion`, and a failsafe
+uncovers the form within 4 s if the intro script ever fails. While the
+intro covers the page the form is not drawn, which keeps the intro at
+~60 fps on 4K integrated graphics.
+
 ### Allowlist
 
 `DNSF_ALLOWLIST` / `DNSF_ALLOWLIST_FILE` name domains that are always ALLOW
@@ -1285,12 +1311,18 @@ prj112/
 ├─ config/      settings.py
 ├─ tests/       test_packet.py · test_proxy_integration.py
 ├─ storage/     models.py · db.py · writer.py
-├─ engine/      decision.py · aggregator.py · modules/
-├─ feeds/       base.py · sources.py · cache.py · manager.py ·
+├─ engine/      decision.py · aggregator.py · allowlist.py · explain.py ·
+│               modules/ (ti · nrd · typosquat · dga · beaconing · rdap)
+├─ feeds/       base.py · sources.py · cache.py · manager.py · psl.py ·
 │               first_seen.py · nrd_source.py
-├─ api/         main.py · repository.py
-├─ dashboard/   index.html
-└─ experiments/ (Stage 16)
+├─ api/         main.py · repository.py · auth.py · module_presentation.py
+├─ dashboard/   index.html (console) · login.html (sign-in + intro) · assets/
+├─ datasets/    eval_dev.csv · dga_dev.csv · real_20261015.* · urlhaus_20260921.*
+├─ models/dga/  dga_model.json (v1, published) · dga_model_v2.json
+├─ resources/   public_suffix_list.dat (pinned)
+├─ tools/       checkpoint · experiments · latency · real-data eval · training
+├─ experiments/ harness · ablation · sweep · latency · real_eval · results/
+└─ start.ps1    launcher: -Mode live (default) | -Mode paper
 ```
 
 ## Security note for the report

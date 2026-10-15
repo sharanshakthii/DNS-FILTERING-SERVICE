@@ -56,8 +56,9 @@
     "service": "https://rdap.org/domain/"
   },
   "files": {
-    "real_20261015.csv": "89e5a695e146686fa3233840591cc06060d61ffbebaba4c3383d5d8155e9169d",
-    "real_20261015.rdap.json": "bf6a090068dc56c8b9bb29b6f0302b82655a0bc45cbb400302aa23a974681a9c"
+    "real_20261015.csv": "70e1641bee1b76b3b6459c193fa5a1a0a8ca71cc18417b9d9fdf05ad7c3738f3",
+    "real_20261015.rdap.json": "d28b18c10d37515b8535d4d9a187038243af6e8416d812359460e1d850fda08b"
   },
-  "caveat": "Labels are feed listings (malicious) and Tranco rank (benign), not verified ground truth. Feeds can list compromised legitimate sites, and Tranco's top 100k contains some abusive domains."
+  "caveat": "Labels are feed listings (malicious) and Tranco rank (benign), not verified ground truth. Feeds can list compromised legitimate sites, and Tranco's top 100k contains some abusive domains.",
+  "checksum_note": "Checksums are of the files as stored in Git (LF line endings). The originals were written with CRLF and first committed before .gitattributes existed, so core.autocrlf normalised them; the content is otherwise byte-identical, which the previous CRLF checksums real_20261015.csv=89e5a695e146..., real_20261015.rdap.json=bf6a090068dc... still confirm."
 }
